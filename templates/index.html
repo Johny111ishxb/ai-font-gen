@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Handwriting Style Creator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        
+        .dropzone {
+            border: 2px dashed #4A5568;
+            transition: all 0.3s ease;
+        }
+        .dropzone.dragover {
+            border-color: #4299E1;
+            background-color: #EBF8FF;
+        }
+        .profile-dropdown {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 100%;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-top: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            z-index: 50;
+        }
+        .profile-dropdown.show {
+            display: block;
+        }
+        /* Add after your existing styles */
+      :root {
+  --sz: 8px;  /* Reduced from 10vmin to a fixed smaller size */
+  --on: #f403b8;
+  --of: #fff;  /* Changed from #fff0 to #fff for white state */
+  --gr: #666666;
+  --tr: all 0.5s ease 0s;
+  --lg: var(--of);
+}
+
+.toggle {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  width: calc(var(--sz) * 8);  /* Adjusted multiplier for better proportion */
+  height: calc(var(--sz) * 4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+input {
+  display: none;
+}
+
+label[for=btn] {
+  position: absolute;
+  width: calc(var(--sz) * 8);
+  height: calc(var(--sz) * 4);
+  background: #e7e5e5;  /* Lighter background */
+  border-radius: var(--sz);
+  box-shadow: 0 0 calc(var(--sz) / 25) calc(var(--sz) / 25) #0002,
+              0 -2px calc(var(--sz) / 5) calc(var(--sz) / 250) #e5e5e5,
+              0 0px calc(var(--sz) / 5) calc(var(--sz) / 25) #ffffff88;
+}
+
+.thumb {
+  position: absolute;
+  width: calc(calc(var(--sz) * 3.5));
+  height: calc(calc(var(--sz) * 3.5));
+  top: calc(var(--sz) / 4);
+  left: calc(var(--sz) / 4);
+  background: linear-gradient(180deg, #ffffff, #f0f0f0);  /* Lighter thumb */
+  border-radius: var(--sz);
+  box-shadow: calc(var(--sz) / -25) calc(var(--sz) / 25) calc(var(--sz) / 15) 0 #fff2 inset,
+              0 0 calc(var(--sz) / 5) calc(var(--sz) / 25) #0002;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  overflow: hidden;
+}
+
+#btn:checked label[for=btn] {
+    box-shadow: none;
+}
+#btn:checked + label {
+  background: linear-gradient(0deg, #121720, #0d1217);  /* Darker when active */
+}
+
+#btn:checked + label .thumb {
+  --lg: var(--on);
+  transition: var(--tr);
+  background: linear-gradient(180deg, #284943, #ff0479);
+  left: calc(100% - calc(var(--sz) * 3.75));
+}
+
+.light {
+  position: absolute;
+  width: calc(var(--sz) * 2);
+  height: calc(var(--sz) * 2);
+  border-radius: var(--sz);
+  right: calc(var(--sz) * -5);
+  box-shadow: 0 0px calc(var(--sz) / 25) calc(var(--sz) / 25) #0002;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--tr);
+}
+
+.light:before {
+  content: "";
+  transition: var(--tr);
+  width: calc(100% - calc(var(--sz) / 7.5));
+  height: calc(100% - calc(var(--sz) / 7.5));
+  position: absolute;
+  background: radial-gradient(circle at 50% 32%, #fff 0 calc(var(--sz) / 10), #f0f0f0 calc(var(--sz) / 1.5));
+  border-radius: var(--sz);
+}
+
+#btn:checked + label + .light:before {
+  --lg: var(--on);
+  transition: var(--tr);
+  box-shadow: 0 0 calc(var(--sz) / 1.25) 0 var(--lg),
+              0 0 calc(var(--sz) / 1.5) calc(var(--sz) / 10) var(--lg) inset;
+  background: radial-gradient(circle at 50% 32%, #fff 0 calc(var(--sz) / 10), var(--lg) calc(var(--sz) / 1.5));
+}
+
+body.dark-mode{
+            background-color: #222;
+            color: #fff;
+        }
+        
+        p{
+            color: rgb(0, 0, 0);
+        }
+
+body.dark-mode h1  {
+        color: #fff;
+        }
+body.dark-mode p {
+        color: #fff;   
+        }
+body.dark-mode h2 {
+        color: #fff;   
+        }
+body.dark-mode h3 {
+        color: #fff;   
+        }
+body.dark-mode #card{
+        background-color: #222;
+        
+        }
+body.dark-mode #btn{
+       background-color: #ff0101;
+        
+        }
+body.dark-mode #signup{
+       background-color: #ff0479;
+        
+        }
+body.dark-mode #signup:hover{
+       background-color: #da086a;
+        
+        }
+body.dark-mode #download-sample{
+       background-color: #ff0479;
+        
+        }
+body.dark-mode #download-sample:hover{
+       background-color: #da086a;
+        
+        }
+    #signup{
+        background-color: #08daad;
+    }
+        
+   #download-sample{
+        background-color: #08daad;
+    }
+   
+
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Add the toggle here -->
+    <div class="toggle">
+        <input type="checkbox" id="btn">
+        <label for="btn">
+            <span class="thumb"></span>
+        </label>
+        <div class="light"></div>
+    </div>
+    <div  class="absolute top-4 right-4 flex items-center space-x-4">
+        <div id="unauthSection">
+            <button id="signup" onclick="window.location.href='/signup'" class="text-sm bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded mr-2">
+                Sign Up
+            </button>
+            <button onclick="window.location.href='/login'" class="text-sm bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-4 rounded">
+                Login
+            </button>
+        </div>
+
+        <div id="authSection" class="hidden relative">
+            <div class="profile-container">
+                <img id="profile-pic" src="/static/default-profile.jpg" alt="Profile" class="w-12 h-12 rounded-full cursor-pointer">
+                <div id="profile-dropdown" class="profile-dropdown">
+                    <div class="border-b pb-2 mb-2">
+                        <div id="profile-name" class="font-semibold text-gray-800"></div>
+                        <div id="profile-email" class="text-sm text-gray-600"></div>
+                    </div>
+                    <button id="logoutBtn" class="w-full text-left text-red-600 hover:bg-red-50 px-2 py-1 rounded">
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-3xl mx-auto">
+            <div class="text-center mb-12">
+                <h1 class="text-4xl font-bold text-gray-900 mb-4">
+                    AI Handwriting Style Creator
+                </h1>
+                <p class="text-lg text-gray-600">
+                    Transform your handwriting into a personal font
+                </p>
+            </div>
+
+            <div id="error-message" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+                <span class="block sm:inline"></span>
+            </div>
+
+            <div id="card" class="bg-white rounded-lg shadow-lg p-8 mb-8">
+                <h2 class="text-2xl font-bold text-gray-900 mb-4">Steps to Create Your Font</h2>
+                <div class="space-y-4 text-gray-600">
+                    <p>1. Download and print the sample form</p>
+                    <p>2. Fill out the form with your handwriting</p>
+                    <p>3. Scan the filled form or take a clear photo</p>
+                    <p>4. Upload the image below</p>
+                    <div class="mt-4">
+                        <a id="download-sample"  href="/get_sample_form" class="inline-block bg-blue-500 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-600 transition-colors">
+                            Download Sample Form
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div id="card" class="bg-white rounded-lg shadow-lg p-8">
+                <div id="dropzone" class="dropzone rounded-lg p-8 text-center cursor-pointer">
+                    <input type="file" id="fileInput" class="hidden" accept=".png,.jpg,.jpeg">
+                    <div class="space-y-4">
+                        <div class="flex justify-center">
+                            <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                            </svg>
+                        </div>
+                        <div class="text-gray-600">
+                            <p class="font-medium">Drop your scanned form here</p>
+                            <p class="text-sm">or click to select file</p>
+                        </div>
+                        <p class="text-xs text-gray-500">PNG, JPG up to 16MB</p>
+                    </div>
+                </div>
+
+                <div id="preview" class="hidden mt-8">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Preview</h3>
+                    <img id="previewImage" class="max-w-full h-auto rounded-lg shadow" src="" alt="Preview">
+                </div>
+
+                <div id="status" class="hidden mt-8">
+                    <div class="flex items-center justify-center">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                        <span class="ml-3 text-gray-600">Processing your handwriting...</span>
+                    </div>
+                </div>
+
+                <button id="generateBtn" class="hidden w-full mt-8 bg-blue-500 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-600 transition-colors">
+                    Generate Font
+                </button>
+
+                <div id="downloadSection" class="hidden mt-8 text-center">
+                    <a id="downloadBtn" href="#" class="inline-block bg-green-500 text-white py-3 px-6 rounded-lg font-medium hover:bg-green-600 transition-colors">
+                        Download Your Font
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
+        import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
+
+        const firebaseConfig = {
+    apiKey: "AIzaSyBk24eVfBQoPQ8Adiw9mA2sS_tpzwJ-ksk",
+    authDomain: "imagetotext-4c3e3.firebaseapp.com",
+    projectId: "imagetotext-4c3e3",
+    storageBucket: "imagetotext-4c3e3.appspot.com",
+    messagingSenderId: "643977043225",
+    appId: "1:643977043225:web:9d648f58d7098a0c78f988",
+    measurementId: "G-XRQFS9KGR0"
+};
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        let fontGenerationCount = 0;
+
+        // Auth state observer
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                document.getElementById('unauthSection').classList.add('hidden');
+                document.getElementById('authSection').classList.remove('hidden');
+                document.getElementById('profile-name').textContent = user.displayName || 'User';
+                document.getElementById('profile-email').textContent = user.email;
+                if (user.photoURL) {
+                    document.getElementById('profile-pic').src = user.photoURL;
+                }
+
+                // Verify token with backend
+                const token = await user.getIdToken();
+                const response = await fetch('/verify-token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ token })
+                });
+
+                if (!response.ok) {
+                    await auth.signOut();
+                }
+            } else {
+                document.getElementById('unauthSection').classList.remove('hidden');
+                document.getElementById('authSection').classList.add('hidden');
+            }
+        });
+
+        // Profile dropdown
+        const profilePic = document.getElementById('profile-pic');
+        const dropdown = document.getElementById('profile-dropdown');
+
+        profilePic.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdown.classList.toggle('show');
+        });
+
+        window.addEventListener('click', () => {
+            dropdown.classList.remove('show');
+        });
+
+        // Logout handler
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            try {
+                await auth.signOut();
+                await fetch('/logout', {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+                window.location.href = '/login';
+            } catch (error) {
+                showError('Logout failed. Please try again.');
+            }
+        });
+
+        // File handling functions
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('fileInput');
+        const preview = document.getElementById('preview');
+        const previewImage = document.getElementById('previewImage');
+        const generateBtn = document.getElementById('generateBtn');
+        const status = document.getElementById('status');
+        const downloadSection = document.getElementById('downloadSection');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const errorMessage = document.getElementById('error-message');
+
+        function showError(message) {
+            errorMessage.querySelector('span').textContent = message;
+            errorMessage.classList.remove('hidden');
+            setTimeout(() => {
+                errorMessage.classList.add('hidden');
+            }, 5000);
+        }
+
+        // Drag and drop handlers
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropzone.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropzone.addEventListener(eventName, () => {
+                dropzone.classList.add('dragover');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropzone.addEventListener(eventName, () => {
+                dropzone.classList.remove('dragover');
+            }, false);
+        });
+
+        dropzone.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            handleFiles(files);
+        }
+
+        dropzone.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        function handleFiles(files) {
+            if (files.length > 0) {
+                const file = files[0];
+                if (file.type.startsWith('image/')) {
+                    showPreview(file);
+                    generateBtn.classList.remove('hidden');
+                    errorMessage.classList.add('hidden');
+                }
+            }
+        }
+
+        function showPreview(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImage.src = e.target.result;
+                preview.classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Generate button handler
+        generateBtn.addEventListener('click', async () => {
+            const user = auth.currentUser;
+            
+            if (fontGenerationCount > 0 && !user) {
+                showError('Please sign up to generate more fonts');
+                window.location.href = '/signup';
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('handwriting', fileInput.files[0]);
+
+            generateBtn.classList.add('hidden');
+            status.classList.remove('hidden');
+            errorMessage.classList.add('hidden');
+            downloadSection.classList.add('hidden');
+
+            try {
+                const idToken = user ? await user.getIdToken() : null;
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    headers: idToken ? {
+                        'Authorization': `Bearer ${idToken}`
+                    } : {},
+                    body: formData
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    fontGenerationCount++;
+                    status.classList.add('hidden');
+                    downloadSection.classList.remove('hidden');
+                    downloadBtn.href = data.font_url;
+                    downloadBtn.download = data.filename;
+                } else {
+                    throw new Error(data.error || 'Failed to generate font');
+                }
+            } catch (error) {
+                showError(error.message);
+                generateBtn.classList.remove('hidden');
+            } finally {
+                status.classList.add('hidden');
+            }
+        });
+        const themeToggle = document.getElementById('btn');
+        
+        // Function to set theme
+        function setTheme(theme) {
+            if (theme === 'dark-mode') {
+                document.body.classList.add('dark-mode');
+                document.body.classList.remove('light-mode');
+                themeToggle.checked = true;
+            } else {
+                document.body.classList.remove('dark-mode');
+                document.body.classList.add('light-mode');
+                themeToggle.checked = false;
+            }
+            localStorage.setItem('theme', theme);
+        }
+
+        // Check for saved theme preference
+        const savedTheme = localStorage.getItem('theme');
+
+        // Check for system theme preference
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+
+        // Set initial theme
+        if (savedTheme) {
+            setTheme(savedTheme);
+        } else {
+            // If no saved preference, use system preference
+            setTheme(prefersDark.matches ? 'dark-mode' : 'light-mode');
+        }
+
+        // Listen for theme toggle changes
+        themeToggle.addEventListener('change', function(e) {
+            setTheme(e.target.checked ? 'dark-mode' : 'light-mode');
+        });
+
+        // Listen for system theme changes
+        prefersDark.addListener((e) => {
+            if (!localStorage.getItem('theme')) {
+                setTheme(e.matches ? 'dark-mode' : 'light-mode');
+            }
+        });
+
+    </script>
+</body>
+</html>
