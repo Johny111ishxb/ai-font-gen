@@ -214,5 +214,5 @@ def generate_unique_filename():
     return f"font_{timestamp}_{random_string}.ttf"
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
+    port = int(environ.get('PORT', 8080))
     app.run(host='0.0.0.0', port=port)
