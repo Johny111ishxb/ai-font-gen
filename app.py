@@ -6,6 +6,7 @@ import logging
 import uuid
 from datetime import datetime
 import firebase_admin
+from os import environ
 from firebase_admin import credentials, auth
 from functools import wraps
 
