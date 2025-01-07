@@ -197,6 +197,24 @@ def upload():
     except Exception as e:
         logger.error(f"Error in upload: {str(e)}")
         return jsonify({'success': False, 'error': str(e)})
+        logger.debug(f"Saving file to: {input_path}")
+        file.save(input_path)
+        logger.debug(f"File saved successfully")
+        logger.debug(f"Running handwrite command on: {input_path}")
+        logger.debug(f"Output directory: {OUTPUT_DIR}")
+
+        # Run handwrite command with more detailed error capture
+        try:
+            result = subprocess.run(
+                ["handwrite", input_path, OUTPUT_DIR],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            logger.debug(f"Handwrite command output: {result.stdout}")
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Handwrite command failed with error: {e.stderr}")
+            raise
 
 @app.route('/download/<filename>')
 def download_font(filename):
