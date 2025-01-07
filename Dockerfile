@@ -1,20 +1,17 @@
 FROM python:3.9-slim
 
-# Install system dependencies and fontforge
+# Install system dependencies and Python development tools
 RUN apt-get update && apt-get install -y \
     fontforge \
     python3-fontforge \
     potrace \
-    imagemagick \
-    libmagickwand-dev \
     build-essential \
+    python3-dev \
+    pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
-# Install additional Python packages that handwrite might need
-RUN pip install --no-cache-dir \
-    numpy \
-    pillow \
-    opencv-python-headless
+# Set environment variable for Fontforge
+ENV FONTFORGE_LANGUAGE=py
 
 # Set working directory
 WORKDIR /app
@@ -30,15 +27,10 @@ COPY . .
 RUN mkdir -p uploads output_fonts && \
     chmod 777 uploads output_fonts
 
-# Configure ImageMagick policy to allow PDF operations
-RUN if [ -f /etc/ImageMagick-6/policy.xml ]; then \
-    sed -i 's/rights="none" pattern="PDF"/rights="read|write" pattern="PDF"/' /etc/ImageMagick-6/policy.xml; \
-    fi
-
 # Set environment variables
 ENV FLASK_APP=app.py
 ENV PYTHONUNBUFFERED=1
 ENV PORT=8080
 
 # Expose port
-EXPOSE 8080
+EXPOSE 8080s
