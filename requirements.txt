@@ -3,3 +3,4 @@ firebase-admin
 Pillow
 opencv-python
 handwrite
+gunicorn
