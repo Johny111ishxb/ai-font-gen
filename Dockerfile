@@ -2,10 +2,16 @@ FROM python:3.9-slim
 
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies and Python tools
 RUN apt-get update && apt-get install -y \
-    handwrite \
+    python3-pip \
+    python3-dev \
+    build-essential \
+    git \
     && rm -rf /var/lib/apt/lists/*
+
+# Install handwrite from pip
+RUN pip install handwrite
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
@@ -22,16 +28,3 @@ ENV PORT=8080
 
 # Run gunicorn
 CMD ["gunicorn", "--bind", "0.0.0.0:8080", "app:app"]
-
-# .gitignore
-__pycache__/
-*.py[cod]
-*$py.class
-venv/
-.env
-.env.local
-uploads/
-output_fonts/
-*.log
-serviceAccountKey.json
-.DS_Store
