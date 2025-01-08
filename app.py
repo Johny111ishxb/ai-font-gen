@@ -8,13 +8,23 @@ from datetime import datetime
 import firebase_admin
 from firebase_admin import credentials, auth
 from functools import wraps
+import json
+import sys
+from pathlib import Path
 
 app = Flask(__name__)
-app.secret_key = 'sdgdsgdfhrthertgew12432'  # Change this to a secure secret key
+app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'sdgdsgdfhrthertgew12432')
 
 # Firebase Admin initialization
-cred = credentials.Certificate("serviceAccountKey.json")
-firebase_admin.initialize_app(cred)
+if os.environ.get('FIREBASE_CREDENTIALS'):
+    cred = credentials.Certificate(json.loads(os.environ.get('FIREBASE_CREDENTIALS')))
+    firebase_admin.initialize_app(cred)
+else:
+    try:
+        cred = credentials.Certificate("serviceAccountKey.json")
+        firebase_admin.initialize_app(cred)
+    except Exception as e:
+        logging.warning(f"Failed to initialize Firebase: {e}")
 
 # Configuration
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -23,14 +33,11 @@ OUTPUT_DIR = os.path.join(BASE_DIR, 'output_fonts')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'tiff', 'bmp'}
 MAX_CONTENT_LENGTH = 16 * 1024 * 1024
 
-# Configure logging
+# Configure logging for production
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('app.log'),
-        logging.StreamHandler()
-    ]
+    handlers=[logging.StreamHandler()]
 )
 logger = logging.getLogger(__name__)
 
@@ -153,46 +160,37 @@ def upload():
         input_path = os.path.join(UPLOAD_FOLDER, filename)
         file.save(input_path)
 
-        # Run handwrite command
-        result = subprocess.run(
-            ["handwrite", input_path, OUTPUT_DIR],
-            capture_output=True,
-            text=True,
-            check=True
-        )
+        try:
+            # Use handwrite library directly instead of CLI
+            from handwrite import Pipeline
+            pipeline = Pipeline()
+            output_path = os.path.join(OUTPUT_DIR, f"font_{uuid.uuid4().hex[:8]}.ttf")
+            pipeline.run(input_path, output_path)
+            
+            if not os.path.exists(output_path):
+                raise Exception("Font generation failed - output file not created")
+            
+            # Clean up input file
+            os.remove(input_path)
+            
+            # Generate download URL
+            download_url = url_for('download_font', filename=os.path.basename(output_path))
+            
+            # If user is not authenticated, mark that they've generated once
+            if not is_authenticated:
+                session['has_generated'] = True
+            
+            return jsonify({
+                'success': True,
+                'font_url': download_url,
+                'filename': os.path.basename(output_path),
+                'first_generation': not has_generated and not is_authenticated
+            })
+            
+        except Exception as e:
+            logger.error(f"Font generation error: {str(e)}")
+            return jsonify({'success': False, 'error': f'Font generation failed: {str(e)}'})
 
-        # Find the generated font
-        generated_font = find_generated_font()
-        if not generated_font:
-            return jsonify({'success': False, 'error': 'Font generation failed'})
-
-        # Create unique filename
-        new_filename = generate_unique_filename()
-        output_path = os.path.join(OUTPUT_DIR, new_filename)
-        
-        # Rename the generated font
-        os.rename(os.path.join(OUTPUT_DIR, generated_font), output_path)
-
-        # Clean up input file
-        os.remove(input_path)
-
-        # Generate download URL
-        download_url = url_for('download_font', filename=new_filename)
-
-        # If user is not authenticated, mark that they've generated once
-        if not is_authenticated:
-            session['has_generated'] = True
-
-        return jsonify({
-            'success': True,
-            'font_url': download_url,
-            'filename': new_filename,
-            'first_generation': not has_generated and not is_authenticated
-        })
-
-    except subprocess.CalledProcessError as e:
-        logger.error(f"Font generation failed: {str(e)}")
-        return jsonify({'success': False, 'error': 'Font generation failed'})
     except Exception as e:
         logger.error(f"Error in upload: {str(e)}")
         return jsonify({'success': False, 'error': str(e)})
@@ -201,16 +199,11 @@ def upload():
 def download_font(filename):
     return send_from_directory(OUTPUT_DIR, filename, as_attachment=True)
 
-def find_generated_font():
-    ttf_files = [f for f in os.listdir(OUTPUT_DIR) if f.endswith('.ttf')]
-    if not ttf_files:
-        return None
-    return max(ttf_files, key=lambda f: os.path.getctime(os.path.join(OUTPUT_DIR, f)))
-
 def generate_unique_filename():
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     random_string = uuid.uuid4().hex[:8]
     return f"font_{timestamp}_{random_string}.ttf"
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 8080))
+    app.run(host='0.0.0.0', port=port)
