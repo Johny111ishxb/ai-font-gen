@@ -10,6 +10,10 @@ RUN apt-get update && apt-get install -y \
     pkg-config \
     libgl1-mesa-glx \
     libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libx11-6 \
     git \
     && rm -rf /var/lib/apt/lists/*
 
@@ -19,12 +23,13 @@ ENV FONTFORGE_LANGUAGE=py
 # Set working directory
 WORKDIR /app
 
-# Copy requirements and install Python dependencies
+# Copy requirements first to leverage Docker cache
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
 
-# Install handwrite package directly from GitHub
-RUN pip install git+https://github.com/cod-ed/handwrite.git
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir opencv-python-headless && \
+    pip install --no-cache-dir git+https://github.com/cod-ed/handwrite.git
 
 # Copy the application code
 COPY . .
