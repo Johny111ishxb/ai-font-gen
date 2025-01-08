@@ -1,6 +1,5 @@
-flask
-firebase-admin
-Pillow
-opencv-python
-handwrite
-gunicorn
+flask==2.3.3
+werkzeug==2.3.7
+firebase-admin==6.2.0
+gunicorn==21.2.0
+handwrite==0.3.0
