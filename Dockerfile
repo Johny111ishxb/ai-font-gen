@@ -2,20 +2,21 @@ FROM python:3.9-slim
 
 WORKDIR /app
 
-# Install system dependencies and Python tools
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
-    python3-pip \
-    python3-dev \
-    build-essential \
     git \
+    fontforge \
+    python3-fontforge \
+    potrace \
     && rm -rf /var/lib/apt/lists/*
 
-# Install handwrite from pip
-RUN pip install handwrite
-
+# Copy requirements first for better caching
 COPY requirements.txt .
+
+# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Copy the rest of the application
 COPY . .
 
 # Create necessary directories
@@ -24,7 +25,6 @@ RUN mkdir -p uploads output_fonts
 # Set environment variables
 ENV FLASK_APP=app.py
 ENV FLASK_ENV=production
-ENV PORT=8080
 
 # Run gunicorn
 CMD ["gunicorn", "--bind", "0.0.0.0:8080", "app:app"]
