@@ -13,7 +13,7 @@ import io
 import sys
 import traceback
 
-app = Flask(__name__)
+app = Flask(name)
 app.secret_key = 'sdgdsgdfhrthertgew12432'
 
 # Firebase Admin initialization
@@ -21,7 +21,7 @@ cred = credentials.Certificate("serviceAccountKey.json")
 firebase_admin.initialize_app(cred)
 
 # Configuration
-BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+BASE_DIR = os.path.abspath(os.path.dirname(file))
 UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
 OUTPUT_DIR = os.path.join(BASE_DIR, 'output_fonts')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'tiff', 'bmp'}
@@ -35,7 +35,7 @@ logging.basicConfig(
         logging.StreamHandler(sys.stdout)
     ]
 )
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(name)
 
 # Create necessary directories
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -71,7 +71,7 @@ def upload():
         has_generated = session.get('has_generated', False)
         auth_header = request.headers.get('Authorization')
         is_authenticated = False
-        
+
         if auth_header and auth_header.startswith('Bearer '):
             token = auth_header.split('Bearer ')[1]
             decoded_token = verify_firebase_token(token)
@@ -88,12 +88,12 @@ def upload():
         if 'handwriting' not in request.files:
             logger.error("No file part in request")
             return jsonify({'success': False, 'error': 'No file uploaded'})
-        
+
         file = request.files['handwriting']
         if file.filename == '':
             logger.error("No file selected")
             return jsonify({'success': False, 'error': 'No file selected'})
-        
+
         if not allowed_file(file.filename):
             logger.error(f"Invalid file type: {file.filename}")
             return jsonify({'success': False, 'error': 'Invalid file type'})
@@ -103,20 +103,20 @@ def upload():
             # Read image data
             image_data = file.read()
             image = Image.open(io.BytesIO(image_data))
-            
+
             # Generate unique filename
-            input_filename = f"input_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}.jpg"
+            inputfilename = f"input{datetime.now().strftime('%Y%m%d%H%M%S')}{uuid.uuid4().hex[:8]}.jpg"
             input_path = os.path.join(UPLOAD_FOLDER, input_filename)
-            
+
             # Convert to RGB if necessary
             if image.mode != 'RGB':
                 image = image.convert('RGB')
-            
+
             # Save processed image
             image.save(input_path, 'JPEG', quality=95)
-            
+
             logger.info(f"Processed and saved image at: {input_path}")
-            
+
         except Exception as e:
             logger.error(f"Image processing error: {str(e)}")
             return jsonify({'success': False, 'error': 'Failed to process image'})
@@ -130,7 +130,7 @@ def upload():
                 check=True
             )
             logger.info(f"Handwrite output: {result.stdout}")
-            
+
         except subprocess.CalledProcessError as e:
             logger.error(f"Handwrite command failed:")
             logger.error(f"Return code: {e.returncode}")
@@ -144,9 +144,9 @@ def upload():
             return jsonify({'success': False, 'error': 'Font generation failed - no output file'})
 
         # Create unique filename for output
-        new_filename = f"font_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}.ttf"
+        newfilename = f"font{datetime.now().strftime('%Y%m%d%H%M%S')}{uuid.uuid4().hex[:8]}.ttf"
         output_path = os.path.join(OUTPUT_DIR, new_filename)
-        
+
         # Rename the generated font
         os.rename(os.path.join(OUTPUT_DIR, generated_font), output_path)
 
@@ -184,6 +184,6 @@ def find_generated_font():
         return None
     return max(ttf_files, key=lambda f: os.path.getctime(os.path.join(OUTPUT_DIR, f)))
 
-if __name__ == '__main__':
+if name == 'main':
     port = int(os.environ.get('PORT', 8080))
     app.run(host='0.0.0.0', port=port)
