@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template, send_from_directory, url_for, redirect, session
+from flask import Flask, request, jsonify, render_template, send_from_directory, url_for, redirect, session 
 from werkzeug.utils import secure_filename
 import os
 import subprocess
@@ -8,20 +8,16 @@ from datetime import datetime
 import firebase_admin
 from firebase_admin import credentials, auth
 from functools import wraps
-from PIL import Image
-import io
-import sys
-import traceback
 
-app = Flask(name)
-app.secret_key = 'sdgdsgdfhrthertgew12432'
+app = Flask(__name__)
+app.secret_key = 'sdgdsgdfhrthertgew12432'  # Change this to a secure secret key
 
 # Firebase Admin initialization
 cred = credentials.Certificate("serviceAccountKey.json")
 firebase_admin.initialize_app(cred)
 
 # Configuration
-BASE_DIR = os.path.abspath(os.path.dirname(file))
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
 OUTPUT_DIR = os.path.join(BASE_DIR, 'output_fonts')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'tiff', 'bmp'}
@@ -32,10 +28,11 @@ logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.StreamHandler(sys.stdout)
+        logging.FileHandler('app.log'),
+        logging.StreamHandler()
     ]
 )
-logger = logging.getLogger(name)
+logger = logging.getLogger(__name__)
 
 # Create necessary directories
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -48,6 +45,31 @@ def verify_firebase_token(id_token):
     except Exception as e:
         logger.error(f"Token verification failed: {str(e)}")
         return None
+
+def auth_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        auth_header = request.headers.get('Authorization')
+        
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({
+                'success': False,
+                'error': 'Authentication required',
+                'requires_auth': True
+            }), 401
+        
+        token = auth_header.split('Bearer ')[1]
+        decoded_token = verify_firebase_token(token)
+        
+        if not decoded_token:
+            return jsonify({
+                'success': False,
+                'error': 'Invalid authentication token',
+                'requires_auth': True
+            }), 401
+            
+        return f(*args, **kwargs)
+    return decorated_function
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -64,20 +86,48 @@ def signup():
 def login():
     return render_template('login.html')
 
+@app.route('/verify-token', methods=['POST'])
+def verify_token():
+    data = request.get_json()
+    token = data.get('token')
+    
+    if not token:
+        return jsonify({'success': False, 'error': 'No token provided'}), 400
+    
+    decoded_token = verify_firebase_token(token)
+    if decoded_token:
+        session['user_id'] = decoded_token['uid']
+        session['email'] = decoded_token.get('email', '')
+        return jsonify({'success': True})
+    
+    return jsonify({'success': False, 'error': 'Invalid token'}), 401
+
+@app.route('/logout', methods=['POST'])
+def logout():
+    session.clear()
+    return jsonify({'success': True})
+
+@app.route('/get_sample_form')
+def get_sample_form():
+    return send_from_directory('static', 'sample_form.pdf')
+
 @app.route('/upload', methods=['POST'])
 def upload():
     try:
-        # Check authentication status
+        # Check if user has already generated once without auth
         has_generated = session.get('has_generated', False)
+        
+        # Check authentication
         auth_header = request.headers.get('Authorization')
         is_authenticated = False
-
+        
         if auth_header and auth_header.startswith('Bearer '):
             token = auth_header.split('Bearer ')[1]
             decoded_token = verify_firebase_token(token)
             if decoded_token:
                 is_authenticated = True
 
+        # If user has already generated once and is not authenticated, require signup
         if has_generated and not is_authenticated:
             return jsonify({
                 'success': False,
@@ -88,77 +138,48 @@ def upload():
         if 'handwriting' not in request.files:
             logger.error("No file part in request")
             return jsonify({'success': False, 'error': 'No file uploaded'})
-
+        
         file = request.files['handwriting']
         if file.filename == '':
             logger.error("No file selected")
             return jsonify({'success': False, 'error': 'No file selected'})
-
+        
         if not allowed_file(file.filename):
             logger.error(f"Invalid file type: {file.filename}")
             return jsonify({'success': False, 'error': 'Invalid file type'})
 
-        # Process and save file
-        try:
-            # Read image data
-            image_data = file.read()
-            image = Image.open(io.BytesIO(image_data))
-
-            # Generate unique filename
-            inputfilename = f"input{datetime.now().strftime('%Y%m%d%H%M%S')}{uuid.uuid4().hex[:8]}.jpg"
-            input_path = os.path.join(UPLOAD_FOLDER, input_filename)
-
-            # Convert to RGB if necessary
-            if image.mode != 'RGB':
-                image = image.convert('RGB')
-
-            # Save processed image
-            image.save(input_path, 'JPEG', quality=95)
-
-            logger.info(f"Processed and saved image at: {input_path}")
-
-        except Exception as e:
-            logger.error(f"Image processing error: {str(e)}")
-            return jsonify({'success': False, 'error': 'Failed to process image'})
+        # Save and process the file
+        filename = secure_filename(file.filename)
+        input_path = os.path.join(UPLOAD_FOLDER, filename)
+        file.save(input_path)
 
         # Run handwrite command
-        try:
-            result = subprocess.run(
-                ["handwrite", input_path, OUTPUT_DIR],
-                capture_output=True,
-                text=True,
-                check=True
-            )
-            logger.info(f"Handwrite output: {result.stdout}")
+        result = subprocess.run(
+            ["handwrite", input_path, OUTPUT_DIR],
+            capture_output=True,
+            text=True,
+            check=True
+        )
 
-        except subprocess.CalledProcessError as e:
-            logger.error(f"Handwrite command failed:")
-            logger.error(f"Return code: {e.returncode}")
-            logger.error(f"stdout: {e.stdout}")
-            logger.error(f"stderr: {e.stderr}")
-            return jsonify({'success': False, 'error': f'Font generation failed: {e.stderr}'})
-
-        # Find generated font
+        # Find the generated font
         generated_font = find_generated_font()
         if not generated_font:
-            return jsonify({'success': False, 'error': 'Font generation failed - no output file'})
+            return jsonify({'success': False, 'error': 'Font generation failed'})
 
-        # Create unique filename for output
-        newfilename = f"font{datetime.now().strftime('%Y%m%d%H%M%S')}{uuid.uuid4().hex[:8]}.ttf"
+        # Create unique filename
+        new_filename = generate_unique_filename()
         output_path = os.path.join(OUTPUT_DIR, new_filename)
-
+        
         # Rename the generated font
         os.rename(os.path.join(OUTPUT_DIR, generated_font), output_path)
 
         # Clean up input file
-        try:
-            os.remove(input_path)
-        except Exception as e:
-            logger.warning(f"Failed to remove input file: {str(e)}")
+        os.remove(input_path)
 
         # Generate download URL
         download_url = url_for('download_font', filename=new_filename)
 
+        # If user is not authenticated, mark that they've generated once
         if not is_authenticated:
             session['has_generated'] = True
 
@@ -169,9 +190,11 @@ def upload():
             'first_generation': not has_generated and not is_authenticated
         })
 
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Font generation failed: {str(e)}")
+        return jsonify({'success': False, 'error': 'Font generation failed'})
     except Exception as e:
-        logger.error(f"Unexpected error in upload: {str(e)}")
-        logger.error(traceback.format_exc())
+        logger.error(f"Error in upload: {str(e)}")
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/download/<filename>')
@@ -184,6 +207,10 @@ def find_generated_font():
         return None
     return max(ttf_files, key=lambda f: os.path.getctime(os.path.join(OUTPUT_DIR, f)))
 
-if name == 'main':
-    port = int(os.environ.get('PORT', 8080))
-    app.run(host='0.0.0.0', port=port)
+def generate_unique_filename():
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    random_string = uuid.uuid4().hex[:8]
+    return f"font_{timestamp}_{random_string}.ttf"
+
+if __name__ == '__main__':
+    app.run(debug=True)
