@@ -311,77 +311,7 @@ body.dark-mode #download-sample:hover{
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         // Add this at the beginning of your script, after the Firebase initialization
-let fontGenerationCount = parseInt(localStorage.getItem('fontGenerationCount') || '0');
 
-// Replace the existing generateBtn click handler with this one
-generateBtn.addEventListener('click', async () => {
-    const user = auth.currentUser;
-    
-    if (fontGenerationCount > 0 && !user) {
-        showError('Please sign up to generate more fonts');
-        return;
-    }
-
-    const formData = new FormData();
-    formData.append('handwriting', fileInput.files[0]);
-
-    generateBtn.classList.add('hidden');
-    status.classList.remove('hidden');
-    errorMessage.classList.add('hidden');
-    downloadSection.classList.add('hidden');
-
-    try {
-        const idToken = user ? await user.getIdToken() : null;
-        const response = await fetch('/upload', {
-            method: 'POST',
-            headers: idToken ? {
-                'Authorization': `Bearer ${idToken}`
-            } : {},
-            body: formData
-        });
-
-        const data = await response.json();
-        
-        if (data.success) {
-            fontGenerationCount++;
-            localStorage.setItem('fontGenerationCount', fontGenerationCount.toString());
-            status.classList.add('hidden');
-            downloadSection.classList.remove('hidden');
-            downloadBtn.href = data.font_url;
-            downloadBtn.download = data.filename;
-            
-            // If this was the first generation and user is not authenticated,
-            // let them know they need to sign up for more
-            if (data.first_generation) {
-                showMessage('First font generated! Sign up to create more fonts.');
-            }
-        } else {
-            if (data.requires_auth) {
-                showError('Please sign up to generate more fonts');
-                generateBtn.classList.remove('hidden');
-            } else {
-                throw new Error(data.error || 'Failed to generate font');
-            }
-        }
-    } catch (error) {
-        showError(error.message);
-        generateBtn.classList.remove('hidden');
-    } finally {
-        status.classList.add('hidden');
-    }
-});
-
-// Add this function for success messages
-function showMessage(message) {
-    const messageEl = document.createElement('div');
-    messageEl.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg';
-    messageEl.textContent = message;
-    document.body.appendChild(messageEl);
-    
-    setTimeout(() => {
-        messageEl.remove();
-    }, 5000);
-}
 
 // Add this function to keep the app alive on Render
 function keepAlive() {
