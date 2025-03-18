@@ -1,30 +1,18 @@
-FROM python:3.9-slim
-
-WORKDIR /app
+FROM python:3.8-slim
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
-    git \
     fontforge \
-    python3-fontforge \
     potrace \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for better caching
-COPY requirements.txt .
+WORKDIR /app
 
-# Install Python dependencies
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the application
 COPY . .
 
-# Create necessary directories
-RUN mkdir -p uploads output_fonts
+ENV PYTHONUNBUFFERED=1
 
-# Set environment variables
-ENV FLASK_APP=app.py
-ENV FLASK_ENV=production
-
-# Run gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "app:app"]
+CMD ["gunicorn", "app:app", "--bind", "0.0.0.0:${PORT}"]
