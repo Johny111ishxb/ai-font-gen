@@ -446,52 +446,62 @@ body.dark-mode #download-sample:hover{
             reader.readAsDataURL(file);
         }
 
-        // Generate button handler
-        generateBtn.addEventListener('click', async () => {
-            const user = auth.currentUser;
-            
-            if (fontGenerationCount > 0 && !user) {
-                showError('Please sign up to generate more fonts');
-                window.location.href = '/signup';
-                return;
-            }
+    // In your JavaScript file (paste-2.txt)
+// Update the generate button handler function:
 
-            const formData = new FormData();
-            formData.append('handwriting', fileInput.files[0]);
+generateBtn.addEventListener('click', async () => {
+    const user = auth.currentUser;
+    
+    if (fontGenerationCount > 0 && !user) {
+        showError('Please sign up to generate more fonts');
+        window.location.href = '/signup';
+        return;
+    }
 
-            generateBtn.classList.add('hidden');
-            status.classList.remove('hidden');
-            errorMessage.classList.add('hidden');
-            downloadSection.classList.add('hidden');
+    const formData = new FormData();
+    formData.append('handwriting', fileInput.files[0]);
 
-            try {
-                const idToken = user ? await user.getIdToken() : null;
-                const response = await fetch('/upload', {
-                    method: 'POST',
-                    headers: idToken ? {
-                        'Authorization': `Bearer ${idToken}`
-                    } : {},
-                    body: formData
-                });
+    generateBtn.classList.add('hidden');
+    status.classList.remove('hidden');
+    errorMessage.classList.add('hidden');
+    downloadSection.classList.add('hidden');
 
-                const data = await response.json();
-                
-                if (data.success) {
-                    fontGenerationCount++;
-                    status.classList.add('hidden');
-                    downloadSection.classList.remove('hidden');
-                    downloadBtn.href = data.font_url;
-                    downloadBtn.download = data.filename;
-                } else {
-                    throw new Error(data.error || 'Failed to generate font');
-                }
-            } catch (error) {
-                showError(error.message);
-                generateBtn.classList.remove('hidden');
-            } finally {
-                status.classList.add('hidden');
-            }
+    try {
+        const idToken = user ? await user.getIdToken() : null;
+        const response = await fetch('/upload', {
+            method: 'POST',
+            headers: idToken ? {
+                'Authorization': `Bearer ${idToken}`
+            } : {},
+            body: formData
         });
+
+        const data = await response.json();
+        
+        if (data.success) {
+            fontGenerationCount++;
+            status.classList.add('hidden');
+            downloadSection.classList.remove('hidden');
+            downloadBtn.href = data.font_url;
+            downloadBtn.download = data.filename;
+        } else {
+            // Add this check to handle auth-required errors specially
+            if (data.requires_auth) {
+                showError('Please sign up to generate more fonts');
+                setTimeout(() => {
+                    window.location.href = '/signup';
+                }, 2000);
+            } else {
+                throw new Error(data.error || 'Failed to generate font');
+            }
+        }
+    } catch (error) {
+        showError(error.message);
+        generateBtn.classList.remove('hidden');
+    } finally {
+        status.classList.add('hidden');
+    }
+});
         const themeToggle = document.getElementById('btn');
         
         // Function to set theme
