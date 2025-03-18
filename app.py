@@ -8,11 +8,9 @@ from datetime import datetime
 import firebase_admin
 from firebase_admin import credentials, auth
 from functools import wraps
-import sys
-import shutil
 
 app = Flask(__name__)
-app.secret_key = 'sdgdsgdfhrthertgew12432'  # Change this to a secure secret key
+app.secret_key = os.environ.get('SECRET_KEY', 'sdgdsgdfhrthertgew12432')
 
 # Firebase Admin initialization
 cred = credentials.Certificate("serviceAccountKey.json")
@@ -40,10 +38,9 @@ logger = logging.getLogger(__name__)
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-# Path to the handwrite executable
-HANDWRITE_PATH = "handwrite"  # If in PATH, or use full path
+# Path to the handwrite executable (now in system PATH via Docker)
+HANDWRITE_PATH = "handwrite"
 
-# FontForge path - this is the exact path provided
 def verify_firebase_token(id_token):
     try:
         decoded_token = auth.verify_id_token(id_token)
@@ -120,10 +117,7 @@ def get_sample_form():
 @app.route('/upload', methods=['POST'])
 def upload():
     try:
-        # Check if user has already generated once without auth
         has_generated = session.get('has_generated', False)
-        
-        # Check authentication
         auth_header = request.headers.get('Authorization')
         is_authenticated = False
         
@@ -133,7 +127,6 @@ def upload():
             if decoded_token:
                 is_authenticated = True
 
-        # If user has already generated once and is not authenticated, require signup
         if has_generated and not is_authenticated:
             return jsonify({
                 'success': False,
@@ -154,115 +147,63 @@ def upload():
             logger.error(f"Invalid file type: {file.filename}")
             return jsonify({'success': False, 'error': 'Invalid file type'})
 
-        # Save and process the file
         filename = secure_filename(file.filename)
         input_path = os.path.join(UPLOAD_FOLDER, filename)
         file.save(input_path)
         
-        # Log the paths to help with debugging
-        logger.debug(f"Input path: {input_path}")
-        logger.debug(f"Output directory: {OUTPUT_DIR}")
-
         try:
-            # Set up environment variables with enhanced PATH
-            env = os.environ.copy()
-            
-            # Add FontForge to the PATH
-            if os.path.exists(FONTFORGE_PATH):
-                if "PATH" in env:
-                    env["PATH"] = f"{FONTFORGE_PATH};{env['PATH']}"
-                else:
-                    env["PATH"] = FONTFORGE_PATH
-                logger.debug(f"Added FontForge to PATH: {FONTFORGE_PATH}")
-            else:
-                logger.warning(f"FontForge path does not exist: {FONTFORGE_PATH}")
-            
-            # Log the final PATH for debugging
-            logger.debug(f"Using PATH: {env['PATH']}")
-            
-            # Create a batch file to run handwrite with the correct environment
             script_file = os.path.join(BASE_DIR, 'run_handwrite.sh')
             with open(script_file, 'w') as f:
-                    f.write('#!/bin/bash\n')
-                    f.write(f'handwrite "{input_path}" "{OUTPUT_DIR}" > handwrite_output.log 2>&1\n')
-                    f.write(f'echo $? > handwrite_exit.log\n')
+                f.write('#!/bin/bash\n')
+                f.write(f'{HANDWRITE_PATH} "{input_path}" "{OUTPUT_DIR}" > handwrite_output.log 2>&1\n')
+                f.write(f'echo $? > handwrite_exit.log\n')
+            
             os.chmod(script_file, 0o755)  # Make script executable
 
             process = subprocess.run(
-                    [script_file],
-                    shell=True,
-                    timeout=120
-                )
-            # Read the output logs
-            output_log = "No output log found"
-            exit_log = "No exit log found"
-            
-            if os.path.exists('handwrite_output.log'):
-                with open('handwrite_output.log', 'r', errors='ignore') as f:
-                    output_log = f.read()
-                    logger.debug(f"Handwrite output: {output_log}")
-            
-            if os.path.exists('handwrite_exit.log'):
-                with open('handwrite_exit.log', 'r') as f:
-                    exit_log = f.read()
-                    logger.debug(f"Handwrite exit: {exit_log}")
-            
-            # Check if the process was successful
+                [script_file],
+                shell=True,
+                timeout=120
+            )
+
             if process.returncode != 0:
                 logger.error(f"Handwrite process failed with return code: {process.returncode}")
-                logger.error(f"Output log: {output_log}")
-                logger.error(f"Exit log: {exit_log}")
                 return jsonify({
                     'success': False, 
-                    'error': 'Font generation failed. Please check server logs for details.'
+                    'error': 'Font generation failed. Please check your input file.'
                 })
                 
         except Exception as e:
             logger.error(f"Exception running handwrite: {str(e)}")
             return jsonify({'success': False, 'error': f'Error running handwrite: {str(e)}'})
         finally:
-            # Clean up batch file
-            if os.path.exists(batch_file):
+            for f in [script_file, 'handwrite_output.log', 'handwrite_exit.log']:
                 try:
-                    os.remove(batch_file)
-                except:
-                    pass
-            
-            # Clean up log files
-            for log_file in ['handwrite_output.log', 'handwrite_exit.log']:
-                if os.path.exists(log_file):
-                    try:
-                        os.remove(log_file)
-                    except:
-                        pass
+                    if f and os.path.exists(f):
+                        os.remove(f)
+                except Exception as e:
+                    logger.warning(f"Error cleaning up {f}: {str(e)}")
 
-        # Find the generated font
+            try:
+                os.remove(input_path)
+            except Exception as e:
+                logger.warning(f"Error removing input file: {str(e)}")
+
         generated_font = find_generated_font()
         if not generated_font:
             logger.error("No font file was generated")
             return jsonify({'success': False, 'error': 'No font file was generated'})
 
-        # Create unique filename
         new_filename = generate_unique_filename()
         output_path = os.path.join(OUTPUT_DIR, new_filename)
-        
-        # Rename the generated font
         os.rename(os.path.join(OUTPUT_DIR, generated_font), output_path)
-        logger.debug(f"Renamed font from {generated_font} to {new_filename}")
 
-        # Clean up input file
-        os.remove(input_path)
-
-        # Generate download URL
-        download_url = url_for('download_font', filename=new_filename)
-
-        # If user is not authenticated, mark that they've generated once
         if not is_authenticated:
             session['has_generated'] = True
 
         return jsonify({
             'success': True,
-            'font_url': download_url,
+            'font_url': url_for('download_font', filename=new_filename),
             'filename': new_filename,
             'first_generation': not has_generated and not is_authenticated
         })
@@ -287,9 +228,5 @@ def generate_unique_filename():
     return f"font_{timestamp}_{random_string}.ttf"
 
 if __name__ == '__main__':
-    # Check if FontForge exists
-    if not os.path.exists(os.path.join(FONTFORGE_PATH, "fontforge.exe")):
-        logger.warning(f"FontForge not found at {os.path.join(FONTFORGE_PATH, 'fontforge.exe')}. Font generation may fail.")
-    
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=True)
+    app.run(host='0.0.0.0', port=port)
