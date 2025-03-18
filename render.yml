@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: your-flask-app
+    dockerfilePath: Dockerfile
+    envVars:
+      - key: PORT
+        value: 10000
