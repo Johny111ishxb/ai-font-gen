@@ -77,6 +77,9 @@ def auth_required(f):
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+@app.route('/ping')
+def ping():
+    return jsonify({'status': 'alive'})
 
 @app.route('/')
 def index():
