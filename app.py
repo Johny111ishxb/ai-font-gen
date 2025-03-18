@@ -117,7 +117,7 @@ def get_sample_form():
 @app.route('/upload', methods=['POST'])
 def upload():
     try:
-        has_generated = session.get('has_generated', False)
+       has_generated = session.get('has_generated', False)
         auth_header = request.headers.get('Authorization')
         is_authenticated = False
         
@@ -127,12 +127,14 @@ def upload():
             if decoded_token:
                 is_authenticated = True
 
-        if has_generated and not is_authenticated:
+        # Add explicit check before processing files
+        if not is_authenticated and has_generated:
             return jsonify({
                 'success': False,
-                'error': 'Please sign up to generate more fonts',
-                'requires_auth': True
-            }), 401
+                'error': 'auth-required',
+                'message': 'Please sign up or log in to create more fonts!',
+                'redirect': url_for('signup')
+            }), 403  # Use 403 Forbidden for rate limiting
 
         if 'handwriting' not in request.files:
             logger.error("No file part in request")
