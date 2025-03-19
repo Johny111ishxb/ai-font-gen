@@ -311,6 +311,7 @@ body.dark-mode #download-sample:hover{
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         // Add this at the beginning of your script, after the Firebase initialization
+        let fontGenerationCount = parseInt(localStorage.getItem('fontGenerationCount') || '0');
 
 
 // Add this function to keep the app alive on Render
@@ -471,7 +472,6 @@ generateBtn.addEventListener('click', async () => {
     
     if (fontGenerationCount > 0 && !user) {
         showError('Please sign up to generate more fonts');
-        window.location.href = '/signup';
         return;
     }
 
@@ -497,17 +497,21 @@ generateBtn.addEventListener('click', async () => {
         
         if (data.success) {
             fontGenerationCount++;
+            localStorage.setItem('fontGenerationCount', fontGenerationCount.toString());
             status.classList.add('hidden');
             downloadSection.classList.remove('hidden');
             downloadBtn.href = data.font_url;
             downloadBtn.download = data.filename;
+            
+            // If this was the first generation and user is not authenticated,
+            // let them know they need to sign up for more
+            if (data.first_generation) {
+                showMessage('First font generated! Sign up to create more fonts.');
+            }
         } else {
-            // Add this check to handle auth-required errors specially
             if (data.requires_auth) {
                 showError('Please sign up to generate more fonts');
-                setTimeout(() => {
-                    window.location.href = '/signup';
-                }, 2000);
+                generateBtn.classList.remove('hidden');
             } else {
                 throw new Error(data.error || 'Failed to generate font');
             }
@@ -519,6 +523,18 @@ generateBtn.addEventListener('click', async () => {
         status.classList.add('hidden');
     }
 });
+
+// Add this function for success messages
+function showMessage(message) {
+    const messageEl = document.createElement('div');
+    messageEl.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg';
+    messageEl.textContent = message;
+    document.body.appendChild(messageEl);
+    
+    setTimeout(() => {
+        messageEl.remove();
+    }, 5000);
+}
         const themeToggle = document.getElementById('btn');
         
         // Function to set theme
