@@ -293,6 +293,23 @@ body.dark-mode #download-sample:hover{
             </div>
         </div>
     </div>
+<script>
+// Add this function to keep the app alive on Render
+function keepAlive() {
+    // Ping the server every 14 minutes to prevent sleep
+    setInterval(async () => {
+        try {
+            await fetch('/ping');
+            console.log('Keep-alive ping sent');
+        } catch (error) {
+            console.error('Keep-alive ping failed:', error);
+        }
+    }, 840000); // 14 minutes in milliseconds
+}
+
+// Call the keepAlive function when the page loads
+keepAlive();
+</script>
 
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
@@ -313,22 +330,6 @@ body.dark-mode #download-sample:hover{
         // Add this at the beginning of your script, after the Firebase initialization
         let fontGenerationCount = parseInt(localStorage.getItem('fontGenerationCount') || '0');
 
-
-// Add this function to keep the app alive on Render
-function keepAlive() {
-    // Ping the server every 14 minutes to prevent sleep
-    setInterval(async () => {
-        try {
-            await fetch('/ping');
-            console.log('Keep-alive ping sent');
-        } catch (error) {
-            console.error('Keep-alive ping failed:', error);
-        }
-    }, 840000); // 14 minutes in milliseconds
-}
-
-// Call the keepAlive function when the page loads
-keepAlive();
 
         // Auth state observer
         onAuthStateChanged(auth, async (user) => {
