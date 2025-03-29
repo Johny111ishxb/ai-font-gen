@@ -34,7 +34,6 @@
 }
 
 .theme-toggle-btn:hover {
-  
   box-shadow: var(--shadow-lg);
   
 }
@@ -162,7 +161,7 @@ footer::before {
 
 .social-icon:hover {
   background: var(--accent-primary);
-  color: var(--ink-dark);
+  color: white;
   transform: translateY(-3px);
   box-shadow: var(--shadow-md);
 }
@@ -205,7 +204,7 @@ footer::before {
 .sign-up-btn {
   background: black;
   color: #fff;
-  padding: 10px 20px;
+  padding: 0.75rem 0.5rem;
   border-radius: 3px;
   border: 1px solid var(--ink-dark);
   text-decoration: none;
@@ -317,4 +316,49 @@ footer::before {
   footer {
     padding: 3rem 1.5rem 2rem;
   }
+}
+.coming-soon-tag {
+  font-size: 0.7rem;
+  background: #f8d775;
+  color: #8a6d0b;
+  padding: 2px 5px;
+  border-radius: 3px;
+  margin-left: 0.5rem;
+  display: inline-block;
+  transform: translateY(-2px);
+}
+.try-now-tag {
+  font-size: 0.7rem;
+  background: #00ff6ade;
+  color: #000000;
+  padding: 2px 5px;
+  border-radius: 3px;
+  margin-left: 0.5rem;
+  display: inline-block;
+  transform: translateY(-2px);
+}
+
+.theme-icon {
+  position: absolute;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.theme-icon-light {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
+}
+
+.theme-icon-dark {
+  opacity: 0;
+  transform: scale(0.8) rotate(-90deg);
+}
+
+[data-theme="dark"] .theme-icon-light {
+  opacity: 0;
+  transform: scale(0.8) rotate(90deg);
+}
+
+[data-theme="dark"] .theme-icon-dark {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
 }
