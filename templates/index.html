@@ -5,206 +5,94 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Handwriting Style Creator</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        
-        .dropzone {
-            border: 2px dashed #4A5568;
-            transition: all 0.3s ease;
-        }
-        .dropzone.dragover {
-            border-color: #4299E1;
-            background-color: #EBF8FF;
-        }
-        .profile-dropdown {
-            display: none;
-            position: absolute;
-            right: 0;
-            top: 100%;
-            background: white;
-            border: 1px solid #e2e8f0;
-            border-radius: 0.5rem;
-            padding: 1rem;
-            margin-top: 0.5rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            z-index: 50;
-        }
-        .profile-dropdown.show {
-            display: block;
-        }
-        /* Add after your existing styles */
-      :root {
-  --sz: 8px;  /* Reduced from 10vmin to a fixed smaller size */
-  --on: #f403b8;
-  --of: #fff;  /* Changed from #fff0 to #fff for white state */
-  --gr: #666666;
-  --tr: all 0.5s ease 0s;
-  --lg: var(--of);
-}
+    <link rel="icon" type="image/png" href="../static/images/s.png">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&family=Playfair+Display:wght@700&family=Source+Serif+Pro:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../static/theme.css">
+   <link rel="stylesheet" href="../static/extra.css">
+    <link rel="stylesheet" href="../static/index.css">
+    <link rel="stylesheet" href="../static/navbar.css">
+    <link rel="stylesheet" href="../static/footer.css">
+    <meta name="description" content="Convert your handwriting into a digital font with our free Handwriting to Font Generator. Easily create custom fonts from your writing in just a few steps. No software needed—generate, preview, and download your unique font instantly!">
+    <meta name="keywords" content="handwriting to font generator, handwrite to font, create font from handwriting, handwriting font creator, custom font generator, convert handwriting to font, make your own font, handwriting to TTF, handwriting to OTF, digital handwriting font, font generator online">
+    <meta name="author" content="SalluLabs">
 
-.toggle {
-  position: absolute;
-  top: 1rem;
-  left: 1rem;
-  width: calc(var(--sz) * 8);  /* Adjusted multiplier for better proportion */
-  height: calc(var(--sz) * 4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 50;
-}
-
-input {
-  display: none;
-}
-
-label[for=btn] {
-  position: absolute;
-  width: calc(var(--sz) * 8);
-  height: calc(var(--sz) * 4);
-  background: #e7e5e5;  /* Lighter background */
-  border-radius: var(--sz);
-  box-shadow: 0 0 calc(var(--sz) / 25) calc(var(--sz) / 25) #0002,
-              0 -2px calc(var(--sz) / 5) calc(var(--sz) / 250) #e5e5e5,
-              0 0px calc(var(--sz) / 5) calc(var(--sz) / 25) #ffffff88;
-}
-
-.thumb {
-  position: absolute;
-  width: calc(calc(var(--sz) * 3.5));
-  height: calc(calc(var(--sz) * 3.5));
-  top: calc(var(--sz) / 4);
-  left: calc(var(--sz) / 4);
-  background: linear-gradient(180deg, #ffffff, #f0f0f0);  /* Lighter thumb */
-  border-radius: var(--sz);
-  box-shadow: calc(var(--sz) / -25) calc(var(--sz) / 25) calc(var(--sz) / 15) 0 #fff2 inset,
-              0 0 calc(var(--sz) / 5) calc(var(--sz) / 25) #0002;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1;
-  overflow: hidden;
-}
-
-#btn:checked label[for=btn] {
-    box-shadow: none;
-}
-#btn:checked + label {
-  background: linear-gradient(0deg, #121720, #0d1217);  /* Darker when active */
-}
-
-#btn:checked + label .thumb {
-  --lg: var(--on);
-  transition: var(--tr);
-  background: linear-gradient(180deg, #284943, #ff0479);
-  left: calc(100% - calc(var(--sz) * 3.75));
-}
-
-.light {
-  position: absolute;
-  width: calc(var(--sz) * 2);
-  height: calc(var(--sz) * 2);
-  border-radius: var(--sz);
-  right: calc(var(--sz) * -5);
-  box-shadow: 0 0px calc(var(--sz) / 25) calc(var(--sz) / 25) #0002;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: var(--tr);
-}
-
-.light:before {
-  content: "";
-  transition: var(--tr);
-  width: calc(100% - calc(var(--sz) / 7.5));
-  height: calc(100% - calc(var(--sz) / 7.5));
-  position: absolute;
-  background: radial-gradient(circle at 50% 32%, #fff 0 calc(var(--sz) / 10), #f0f0f0 calc(var(--sz) / 1.5));
-  border-radius: var(--sz);
-}
-
-#btn:checked + label + .light:before {
-  --lg: var(--on);
-  transition: var(--tr);
-  box-shadow: 0 0 calc(var(--sz) / 1.25) 0 var(--lg),
-              0 0 calc(var(--sz) / 1.5) calc(var(--sz) / 10) var(--lg) inset;
-  background: radial-gradient(circle at 50% 32%, #fff 0 calc(var(--sz) / 10), var(--lg) calc(var(--sz) / 1.5));
-}
-
-body.dark-mode{
-            background-color: #222;
-            color: #fff;
-        }
-        
-        p{
-            color: rgb(0, 0, 0);
-        }
-
-body.dark-mode h1  {
-        color: #fff;
-        }
-body.dark-mode p {
-        color: #fff;   
-        }
-body.dark-mode h2 {
-        color: #fff;   
-        }
-body.dark-mode h3 {
-        color: #fff;   
-        }
-body.dark-mode #card{
-        background-color: #222;
-        
-        }
-body.dark-mode #btn{
-       background-color: #ff0101;
-        
-        }
-body.dark-mode #signup{
-       background-color: #ff0479;
-        
-        }
-body.dark-mode #signup:hover{
-       background-color: #da086a;
-        
-        }
-body.dark-mode #download-sample{
-       background-color: #ff0479;
-        
-        }
-body.dark-mode #download-sample:hover{
-       background-color: #da086a;
-        
-        }
-    #signup{
-        background-color: #08daad;
-    }
-        
-   #download-sample{
-        background-color: #08daad;
-    }
-   
-
-    </style>
+     <!-- Firebase -->
+     <script type="module" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
+     <script type="module" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js"></script>
+     <script type="module" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js"></script>
+     <!-- Your auth script -->
+     <script type="module" src="../static/firebaseauth.js"></script>
+     <script src="https://kit.fontawesome.com/0401efc0fe.js" crossorigin="anonymous"></script>
+     <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateInit"></script>
+    
 </head>
 <body class="bg-gray-50">
-    <!-- Add the toggle here -->
-    <div class="toggle">
-        <input type="checkbox" id="btn">
-        <label for="btn">
-            <span class="thumb"></span>
-        </label>
-        <div class="light"></div>
-    </div>
-    <div  class="absolute top-4 right-4 flex items-center space-x-4">
-        <div id="unauthSection">
-            <button id="signup" onclick="window.location.href='/signup'" class="text-sm bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded mr-2">
-                Sign Up
-            </button>
-            <button onclick="window.location.href='/login'" class="text-sm bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-4 rounded">
-                Login
-            </button>
+    <nav class="navbar">
+        <div class="nav-content">
+            <div class="nav-left">
+                <a href="https://sallulabs.com/" class="logo">SalluLabs<span class="beta-tag">BETA</span></a>                 <div class="tools-menu">
+                   
+                 
+                </div>
+            </div>
+            
+            <div class="mobile-menu-toggle">
+                <span class="hamburger-icon">&#9776;</span>
+            </div>
+            
+            <div class="nav-right">
+                <div class="user-credits">
+                    <span class="credits-label">Credits:</span>
+                    <span class="credits-value" id="user-credits">0</span>
+                </div>
+                
+                <div class="auth-buttons">
+                    <button class="sign-up-btn no-auth-required" id="sign-up-btn">SignUP\logIN</button>
+                    <div class="profile-container auth-required" style="display: none;">
+                        <img id="profile-pic" src="..static/images/user.png" alt="" style="display:block; width: 50px; height: 50px; border-radius: 50%;">
+                        <div class="profile-dropdown" id="profile-dropdown">
+                            <div class="profile-info">
+                                <div class="user-name" id="profile-name">User Name</div>
+                                <div class="user-email" id="profile-email">user@example.com</div>
+                            </div>
+                            <div class="stats-section">
+                           
+                                <div class="stats-item">
+                                    <span class="stats-label">Invites:</span>
+                                    <span class="stats-value" id="user-invites">0</span>
+                                </div>
+                            </div>
+                            <div class="dropdown-menu">
+                                <button class="menu-item" id="invite-btn">
+                                    <i class="menu-icon invite-icon"></i>
+                                    Invite a Friend
+                                </button>
+                                <button class="logout" id="logout">Logout</button>
+                            </div>
+                            <!-- Invite modal (from original code) -->
+                           
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
+    </nav>
+
+    
+    <!-- Invite modal (moved outside navbar for better accessibility) -->
+    <div class="invite-modal" id="invite-modal">
+        <div class="invite-modal-content">
+            <span class="close-modal">&times;</span>
+            <h3>Invite a Friend</h3>
+            <p>Share this link with your friends. You'll get 5 credits when they sign up!</p>
+            <div class="invite-link-container">
+                <input type="text" id="invite-link" readonly>
+                <button id="copy-link">Copy</button>
+            </div>
+            <div class="invite-success" id="invite-success">Link copied!</div>
+        </div>
+    </div>
 
         <div id="authSection" class="hidden relative">
             <div class="profile-container">
@@ -221,12 +109,11 @@ body.dark-mode #download-sample:hover{
             </div>
         </div>
     </div>
-
-    <div class="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
+    <div  class="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
         <div class="max-w-3xl mx-auto">
             <div class="text-center mb-12">
-                <h1 class="text-4xl font-bold text-gray-900 mb-4">
-                    AI Handwriting Style Creator
+                <h1 class="text-4xl font-bold  mb-4">
+                    AI Handwriting <span class="head">Style Creator</span>
                 </h1>
                 <p class="text-lg text-gray-600">
                     Transform your handwriting into a personal font
@@ -237,9 +124,9 @@ body.dark-mode #download-sample:hover{
                 <span class="block sm:inline"></span>
             </div>
 
-            <div id="card" class="bg-white rounded-lg shadow-lg p-8 mb-8">
-                <h2 class="text-2xl font-bold text-gray-900 mb-4">Steps to Create Your Font</h2>
-                <div class="space-y-4 text-gray-600">
+            <div id="card1" class="bg-white rounded-lg shadow-lg p-8 mb-8">
+                <h2 class="text-2xl font-bold -900 mb-4">Steps to Create Your Font</h2>
+                <div class="space-y-4 ">
                     <p>1. Download and print the sample form</p>
                     <p>2. Fill out the form with your handwriting</p>
                     <p>3. Scan the filled form or take a clear photo</p>
@@ -252,7 +139,7 @@ body.dark-mode #download-sample:hover{
                 </div>
             </div>
 
-            <div id="card" class="bg-white rounded-lg shadow-lg p-8">
+            <div id="card2" class="bg-white rounded-lg shadow-lg p-8">
                 <div id="dropzone" class="dropzone rounded-lg p-8 text-center cursor-pointer">
                     <input type="file" id="fileInput" class="hidden" accept=".png,.jpg,.jpeg">
                     <div class="space-y-4">
@@ -293,24 +180,114 @@ body.dark-mode #download-sample:hover{
             </div>
         </div>
     </div>
-<script>
-// Add this function to keep the app alive on Render
-function keepAlive() {
-    // Ping the server every 14 minutes to prevent sleep
-    setInterval(async () => {
-        try {
-            await fetch('/ping');
-            console.log('Keep-alive ping sent');
-        } catch (error) {
-            console.error('Keep-alive ping failed:', error);
-        }
-    }, 840000); // 14 minutes in milliseconds
-}
-
-// Call the keepAlive function when the page loads
-keepAlive();
-</script>
-
+    <footer>
+        <div class="footer-container">
+          <div class="footer-content">
+            <!-- Brand Section -->
+            <div class="footer-section">
+              <a href="#" class="footer-logo">@SalluLabs</a>
+              <p class="footer-description">We build artificial intelligence apps thats not only save your money also boost your work.</p>
+              <div class="social-links">
+                <a href="https://www.facebook.com/salu7512/" class="social-icon">
+                  <i class="fa-brands fa-facebook"></i>
+                </a>
+                <a href="https://github.com/Johny111ishxb" class="social-icon">
+                  <i class="fa-brands fa-github"></i>
+                </a>
+                <a href="https://www.instagram.com/salmannaw7" class="social-icon">
+                  <i class="fa-brands fa-instagram"></i>
+                </a>
+                <a href="https://www.linkedin.com/authwall?trk=gf&trkInfo=AQHJ8M1sH-4RnQAAAZWEBXy4JRyFaNcgU_ZKNVmkWb9EvkxCYfqPN2yx548JnetITVzvt5nAfDr2c05CfeXaYYLWk1YO5tbi6oaC-uh6toTeViRy5NObWa-QvdDbr0U79QNzi2I=&original_referer=https://sallulabs.com/&sessionRedirect=https%3A%2F%2Fwww.linkedin.com%2Fin%2Fsalman-angaria-04995a354%3Futm_source%3Dshare%26utm_campaign%3Dshare_via%26utm_content%3Dprofile%26utm_medium%3Dandroid_app" class="social-icon">
+                  <i class="fa-brands fa-linkedin-in"></i>
+                </a>
+              </div>
+            </div>
+            
+            <!-- Links Section -->
+            <div class="footer-section">
+              <h3 class="footer-heading">Quick Links</h3>
+              <div class="footer-links">
+                <a href="https://sallulabs.com/about">About Us</a>
+                <a href="https://sallulabs.com/Pricing">Pricing</a>
+                <a href="https://sallulabs.com/tools">other tools</a>
+                <a href="https://sallulabs.com/background-remover">background-remover <span class="coming-soon-tag"> Comming Soon!</span></a>
+                <a href="https://sallulabs.com/font-generation">font Generation <span class="coming-soon-tag"> Comming Soon!</span></a>
+                <a href="https://sallulabs.com/CSSExtracor ">Css Extractor <span class="try-now-tag"> try now !</span></a>
+                <a href="https://sallulabs.com/QR-Scanner">QR Code(scanner&extracor)<span class="try-now-tag"> try now !</span></a>
+              </div>
+            </div>
+            
+            <!-- Contact Section -->
+            <div class="footer-section">
+              <h3 class="footer-heading">Contact Us</h3>
+              <div class="contact-info">
+                <div class="contact-item">
+                  <i class="fa-solid fa-location-dot"></i>
+                  <span>karachi, Pakistan</span>
+                </div>
+                <div class="contact-item">
+                  <i class="fa-solid fa-address-card"></i>
+                  <span>salman.nawaz@SalluLabs.com</span>
+                </div>
+                <div class="contact-item">
+                  <i class="fa-brands fa-whatsapp"></i>
+      
+                  <span>+92 3102791036</span>
+                </div>
+              </div>
+              <a href="https://api.whatsapp.com/send/?phone=%2B923102791036&text&type=phone_number&app_absent=0" class="send-message-btn">
+                <span>Send Message</span>
+                <i class="fa-solid fa-arrow-right"></i>
+              </a>
+            </div>
+            
+            <!-- Newsletter Section -->
+            <div class="footer-section">
+              <h3 class="footer-heading">Newsletter</h3>
+              <p class="footer-description">Subscribe to receive updates and news.</p>
+              <form class="newsletter-form">
+                <div class="form-group">
+                  <label for="email" class="form-label">Email Address</label>
+                  <input type="email" id="email" class="form-input" placeholder="Your email address">
+                </div>
+                <button type="submit" class="sign-up-btn">Subscribe</button>
+              </form>
+            </div>
+          </div>
+          
+          <div class="footer-bottom">
+            <div class="copyright">
+              © 2025 @SalluLabs. Made with <span class="heart">♥</span> in Pakistan
+            </div>
+            <div class="footer-bottom-links">
+              <a href="https://sallulabs.com/privacy">Privacy Policy</a>
+              <a href="/terms">Terms of Use</a>
+              <a href="/contact">Contact</a>
+            </div>
+          </div>
+        </div>
+      </footer>
+      
+      
+      
+      <div class="theme-toggle">
+        <button class="theme-toggle-btn" aria-label="Toggle theme">
+          <!-- Sun Icon (Light Theme) -->
+          <span class="theme-icon theme-icon-light active">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="5"></circle>
+              <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path>
+            </svg>
+          </span>
+          
+          <!-- Moon Icon (Dark Theme) -->
+          <span class="theme-icon theme-icon-dark">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+          </span>
+        </button>
+      </div>
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
         import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
@@ -327,9 +304,7 @@ keepAlive();
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        // Add this at the beginning of your script, after the Firebase initialization
-        let fontGenerationCount = parseInt(localStorage.getItem('fontGenerationCount') || '0');
-
+        let fontGenerationCount = 0;
 
         // Auth state observer
         onAuthStateChanged(auth, async (user) => {
@@ -465,77 +440,52 @@ keepAlive();
             reader.readAsDataURL(file);
         }
 
-    // In your JavaScript file (paste-2.txt)
-// Update the generate button handler function:
-
-generateBtn.addEventListener('click', async () => {
-    const user = auth.currentUser;
-    
-    if (fontGenerationCount > 0 && !user) {
-        showError('Please sign up to generate more fonts');
-        return;
-    }
-
-    const formData = new FormData();
-    formData.append('handwriting', fileInput.files[0]);
-
-    generateBtn.classList.add('hidden');
-    status.classList.remove('hidden');
-    errorMessage.classList.add('hidden');
-    downloadSection.classList.add('hidden');
-
-    try {
-        const idToken = user ? await user.getIdToken() : null;
-        const response = await fetch('/upload', {
-            method: 'POST',
-            headers: idToken ? {
-                'Authorization': `Bearer ${idToken}`
-            } : {},
-            body: formData
-        });
-
-        const data = await response.json();
-        
-        if (data.success) {
-            fontGenerationCount++;
-            localStorage.setItem('fontGenerationCount', fontGenerationCount.toString());
-            status.classList.add('hidden');
-            downloadSection.classList.remove('hidden');
-            downloadBtn.href = data.font_url;
-            downloadBtn.download = data.filename;
+        // Generate button handler
+        generateBtn.addEventListener('click', async () => {
+            const user = auth.currentUser;
             
-            // If this was the first generation and user is not authenticated,
-            // let them know they need to sign up for more
-            if (data.first_generation) {
-                showMessage('First font generated! Sign up to create more fonts.');
-            }
-        } else {
-            if (data.requires_auth) {
+            if (fontGenerationCount > 0 && !user) {
                 showError('Please sign up to generate more fonts');
-                generateBtn.classList.remove('hidden');
-            } else {
-                throw new Error(data.error || 'Failed to generate font');
+                window.location.href = '/signup';
+                return;
             }
-        }
-    } catch (error) {
-        showError(error.message);
-        generateBtn.classList.remove('hidden');
-    } finally {
-        status.classList.add('hidden');
-    }
-});
 
-// Add this function for success messages
-function showMessage(message) {
-    const messageEl = document.createElement('div');
-    messageEl.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg';
-    messageEl.textContent = message;
-    document.body.appendChild(messageEl);
-    
-    setTimeout(() => {
-        messageEl.remove();
-    }, 5000);
-}
+            const formData = new FormData();
+            formData.append('handwriting', fileInput.files[0]);
+
+            generateBtn.classList.add('hidden');
+            status.classList.remove('hidden');
+            errorMessage.classList.add('hidden');
+            downloadSection.classList.add('hidden');
+
+            try {
+                const idToken = user ? await user.getIdToken() : null;
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    headers: idToken ? {
+                        'Authorization': `Bearer ${idToken}`
+                    } : {},
+                    body: formData
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    fontGenerationCount++;
+                    status.classList.add('hidden');
+                    downloadSection.classList.remove('hidden');
+                    downloadBtn.href = data.font_url;
+                    downloadBtn.download = data.filename;
+                } else {
+                    throw new Error(data.error || 'Failed to generate font');
+                }
+            } catch (error) {
+                showError(error.message);
+                generateBtn.classList.remove('hidden');
+            } finally {
+                status.classList.add('hidden');
+            }
+        });
         const themeToggle = document.getElementById('btn');
         
         // Function to set theme
@@ -579,5 +529,7 @@ function showMessage(message) {
         });
 
     </script>
+         <script async src="../static/script.js"></script>
+
 </body>
 </html>
