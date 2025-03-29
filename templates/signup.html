@@ -5,14 +5,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/auth.css">
+    <script type="application/ld+json">
+        {
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          "name": "SalluLabs",
+          "url": "https://sallulabs.com/signup",
+          "logo": "https://sallulabs.com/static/images/s.png",
+          "description": "AI-powered tools for boosting productivity and creativity",
+          "contactPoint": {
+            "@type": "ContactPoint",
+            "telephone": "+92 3102791036",
+            "contactType": "customer service"
+          },
+          "sameAs": [
+            "https://twitter.com/SalluLabs",
+            "https://github.com/SalluLabs",
+            "https://linkedin.com/company/SalluLabs"
+          ]
+        }
+        </script>
 </head>
 <body>
     <div class="wrapper">
         <h1>Sign Up</h1>
         <div id="success-message" class="success-message" style="display: none;"></div>
-<div id="error-message" class="error-message" style="display: none;"></div>
-        
+        <div id="error-message" class="error-message" style="display: none;"></div>
         
         <form id="signupForm">
             <div>
@@ -44,7 +63,6 @@
             <button type="submit">Sign Up</button>
 
             <button type="button" id="google-signup" class="google">
-                
                 Continue with Google
             </button>
         </form>
@@ -52,7 +70,39 @@
         <p>
             Already have an Account? <a href="/login">Login</a>
         </p>
+        
+        <div id="verification-instructions" style="display: none; margin-top: 20px; padding: 15px; background-color: #e7f3ff; border-radius: 5px;">
+            <h3>Email Verification Required</h3>
+            <p>We've sent a verification link to your email address. Please check your inbox and click the link to verify your account.</p>
+            <p>Once verified, you'll be able to log in to your account.</p>
+            <p><a href="#" id="resend-verification">Didn't receive the email? Click here to resend</a></p>
+        </div>
     </div>
-    
+    <input type="hidden" id="invite-code" name="invite-code" value="{{ invite_code }}">
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Get invite code from URL if not already set
+            const urlParams = new URLSearchParams(window.location.search);
+            const inviteParam = urlParams.get('invite');
+            
+            const inviteCodeInput = document.getElementById('invite-code');
+            if (inviteCodeInput && inviteParam && !inviteCodeInput.value) {
+                inviteCodeInput.value = inviteParam;
+            }
+            
+            // Resend verification event listener
+            const resendLink = document.getElementById('resend-verification');
+            if (resendLink) {
+                resendLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    // This will be handled in the firebaseauth.js file
+                    if (window.resendVerificationEmail) {
+                        window.resendVerificationEmail();
+                    }
+                });
+            }
+        });
+    </script>
     <script type="module" src="/static/firebaseauth.js"></script>
 </body>
+</html>
