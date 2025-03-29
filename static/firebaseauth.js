@@ -1,19 +1,18 @@
 // Import the necessary Firebase modules
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
-import { getFirestore, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, sendEmailVerification } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
+import { getFirestore, doc, setDoc, getDoc, updateDoc, increment } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
 
 // Firebase configuration
 const firebaseConfig = {
-    apiKey: "AIzaSyBk24eVfBQoPQ8Adiw9mA2sS_tpzwJ-ksk",
-    authDomain: "imagetotext-4c3e3.firebaseapp.com",
-    projectId: "imagetotext-4c3e3",
-    storageBucket: "imagetotext-4c3e3.appspot.com",
-    messagingSenderId: "643977043225",
-    appId: "1:643977043225:web:9d648f58d7098a0c78f988",
-    measurementId: "G-XRQFS9KGR0"
-};
-
+    apiKey: "AIzaSyA8D2w0J8auihu3BbR8McIpoSduDfI2jxo",
+    authDomain: "are-you-genius-1f253.firebaseapp.com",
+    projectId: "are-you-genius-1f253",
+    storageBucket: "are-you-genius-1f253.firebasestorage.app",
+    messagingSenderId: "771421054895",
+    appId: "1:771421054895:web:7a27a9c69f722069ebb15a",
+    measurementId: "G-RE3R9WGMH9"
+  };
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -66,25 +65,132 @@ async function verifyTokenWithBackend(token) {
     }
 }
 
-// Handle successful authentication
-async function handleAuthSuccess(user, isNewUser = false) {
+// Function to get URL parameters
+function getUrlParam(param) {
+    const queryString = window.location.search;
+    const urlParams = new URLSearchParams(queryString);
+    return urlParams.get(param);
+}
+
+// Send verification email to user
+async function sendVerificationEmail(user) {
     try {
+        await sendEmailVerification(user);
+        displaySuccessMessage("Verification email sent! Please check your inbox and verify your email before logging in.");
+    } catch (error) {
+        console.error("Error sending verification email:", error);
+        displayErrorMessage("Failed to send verification email: " + error.message);
+    }
+}
+
+// Handle successful registration
+async function handleRegistrationSuccess(user, isNewUser = true) {
+    try {
+        // For new users, ensure we have their data in Firestore
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        
+        // Check for invite code
+        const inviteCode = getUrlParam('invite');
+        
+        if (!userDoc.exists()) {
+            // Default initial data
+            const userData = {
+                firstname: user.displayName || user.email.split('@')[0],
+                email: user.email,
+                createdAt: new Date().toISOString(),
+                credits: 5, // Give new users 5 free credits
+                totalInvites: 0,
+                emailVerified: false
+            };
+            
+            // If invited, store the referrer
+            if (inviteCode) {
+                userData.invitedBy = inviteCode;
+                
+                // Credit the referrer
+                try {
+                    const referrerDoc = await getDoc(doc(db, "users", inviteCode));
+                    if (referrerDoc.exists()) {
+                        // Update referrer's credits and invite count
+                        await updateDoc(doc(db, "users", inviteCode), {
+                            credits: increment(5),
+                            totalInvites: increment(1)
+                        });
+                        
+                        // Also update backend
+                        await fetch('/credit-referrer', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ 
+                                referrerId: inviteCode,
+                                newUserId: user.uid 
+                            }),
+                            credentials: 'include'
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error updating referrer:', error);
+                }
+            }
+            
+            await setDoc(doc(db, "users", user.uid), userData);
+        }
+        
+        // Send verification email for email/password sign up
+        if (!user.emailVerified) {
+            await sendVerificationEmail(user);
+            
+            // Redirect to login page after a delay
+            setTimeout(() => {
+                window.location.href = '/login';
+            }, 5000);
+        }
+    } catch (error) {
+        console.error('Registration error:', error);
+        displayErrorMessage('Registration failed. Please try again.');
+    }
+}
+
+// Handle successful authentication (login)
+async function handleAuthSuccess(user) {
+    try {
+        // Check if email is verified for email/password login
+        if (!user.emailVerified && user.providerData[0].providerId === 'password') {
+            displayErrorMessage("Please verify your email before logging in. Check your inbox for a verification link.");
+            
+            // Show resend verification option
+            const errorMessage = document.getElementById("error-message");
+            if (errorMessage) {
+                const resendLink = document.createElement('a');
+                resendLink.href = '#';
+                resendLink.textContent = 'Resend verification email';
+                resendLink.className = 'resend-link';
+                resendLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    sendVerificationEmail(user);
+                });
+                
+                errorMessage.appendChild(document.createElement('br'));
+                errorMessage.appendChild(resendLink);
+            }
+            
+            // Sign out the user
+            await auth.signOut();
+            return;
+        }
+        
+        // If email is verified or Google sign-in, proceed with login
         const token = await user.getIdToken();
         await verifyTokenWithBackend(token);
         
-        if (isNewUser) {
-            // For new users, ensure we have their data in Firestore
-            const userDoc = await getDoc(doc(db, "users", user.uid));
-            if (!userDoc.exists()) {
-                await setDoc(doc(db, "users", user.uid), {
-                    firstname: user.displayName || user.email.split('@')[0],
-                    email: user.email,
-                    createdAt: new Date().toISOString()
-                });
-            }
-        }
+        // Update user's emailVerified status in Firestore
+        await updateDoc(doc(db, "users", user.uid), {
+            emailVerified: user.emailVerified
+        });
         
-        displaySuccessMessage("Authentication successful! Redirecting...");
+        displaySuccessMessage("Login successful! Redirecting...");
         setTimeout(() => {
             window.location.href = '/';
         }, 1000);
@@ -104,14 +210,71 @@ async function handleGoogleAuth(isSignUp = false) {
         // Check if this is a new user
         const isNewUser = result._tokenResponse.isNewUser;
         
-        await handleAuthSuccess(user, isNewUser);
+        if (isNewUser) {
+            await handleRegistrationSuccess(user, true);
+        } else {
+            await handleAuthSuccess(user);
+        }
     } catch (error) {
         displayErrorMessage(`Google sign-${isSignUp ? 'up' : 'in'} failed: ${error.message}`);
     }
 }
 
+// Generate and copy invite link
+function handleInvite() {
+    const inviteModal = document.getElementById('invite-modal');
+    const closeModal = document.querySelector('.close-modal');
+    const copyLinkBtn = document.getElementById('copy-link');
+    const inviteLink = document.getElementById('invite-link');
+    const inviteSuccess = document.getElementById('invite-success');
+    
+    if (auth.currentUser) {
+        // Generate invite link with current user's UID
+        const baseUrl = window.location.origin;
+        const inviteUrl = `${baseUrl}/signup?invite=${auth.currentUser.uid}`;
+        
+        // Set the link in the input field
+        inviteLink.value = inviteUrl;
+        
+        // Show the modal
+        inviteModal.style.display = 'block';
+        
+        // Copy link button handler
+        copyLinkBtn.addEventListener('click', () => {
+            inviteLink.select();
+            document.execCommand('copy');
+            
+            // Show success message
+            inviteSuccess.style.display = 'block';
+            setTimeout(() => {
+                inviteSuccess.style.display = 'none';
+            }, 3000);
+        });
+        
+        // Close modal handler
+        closeModal.addEventListener('click', () => {
+            inviteModal.style.display = 'none';
+        });
+        
+        // Close when clicking outside
+        window.addEventListener('click', (event) => {
+            if (event.target === inviteModal) {
+                inviteModal.style.display = 'none';
+            }
+        });
+    }
+}
+
 // Document ready event listeners
 document.addEventListener('DOMContentLoaded', () => {
+    // Handle signup button on main page
+    const signUpButton = document.getElementById("sign-up-btn");
+    if (signUpButton) {
+        signUpButton.addEventListener('click', () => {
+            window.location.href = '/signup';
+        });
+    }
+
     // Handle signup link on login page
     const signupLink = document.querySelector('a[href="/signup"]');
     if (signupLink) {
@@ -131,7 +294,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             try {
                 const userCredential = await signInWithEmailAndPassword(auth, email, password);
-                await handleAuthSuccess(userCredential.user, false);
+                await handleAuthSuccess(userCredential.user);
             } catch (error) {
                 displayErrorMessage("Login failed: " + error.message);
             }
@@ -163,14 +326,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                 const user = userCredential.user;
 
-                // Save user info to Firestore
-                await setDoc(doc(db, "users", user.uid), {
-                    firstname: firstname,
-                    email: email,
-                    createdAt: new Date().toISOString()
-                });
-
-                await handleAuthSuccess(user, true);
+                // The user data will be handled in handleRegistrationSuccess
+                await handleRegistrationSuccess(user, true);
             } catch (error) {
                 displayErrorMessage("Sign-up failed: " + error.message);
             }
@@ -181,6 +338,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (googleSignUpButton) {
             googleSignUpButton.addEventListener('click', () => handleGoogleAuth(true));
         }
+    }
+    
+    // Invite button handler
+    const inviteButton = document.getElementById("invite-btn");
+    if (inviteButton) {
+        inviteButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleInvite();
+        });
     }
 });
 
@@ -200,9 +367,34 @@ async function handleLogout() {
     }
 }
 
+// Function to update user stats in the UI
+async function updateUserStats(userId) {
+    try {
+        const userDoc = await getDoc(doc(db, "users", userId));
+        if (userDoc.exists()) {
+            const userData = userDoc.data();
+            
+            // Update credits display
+            const creditsElement = document.getElementById("user-credits");
+            if (creditsElement) {
+                creditsElement.textContent = userData.credits || 0;
+            }
+            
+            // Update invites display
+            const invitesElement = document.getElementById("user-invites");
+            if (invitesElement) {
+                invitesElement.textContent = userData.totalInvites || 0;
+            }
+        }
+    } catch (error) {
+        console.error('Error fetching user stats:', error);
+    }
+}
+
 // Authentication state observer
 onAuthStateChanged(auth, async (user) => {
     const signUpButton = document.getElementById("sign-up-btn");
+    const profileContainer = document.querySelector('.profile-container');
     const profilePic = document.getElementById("profile-pic");
     const profileName = document.getElementById("profile-name");
     const profileEmail = document.getElementById("profile-email");
@@ -211,12 +403,23 @@ onAuthStateChanged(auth, async (user) => {
     if (user) {
         // User is signed in
         try {
+            // Check if email is verified for protected pages
+            if (!user.emailVerified && user.providerData[0].providerId === 'password') {
+                const protectedPaths = ['/', '/index.html'];
+                if (protectedPaths.includes(window.location.pathname)) {
+                    displayErrorMessage("Please verify your email before accessing this page.");
+                    await handleLogout();
+                    return;
+                }
+            }
+            
             const token = await user.getIdToken();
             await verifyTokenWithBackend(token);
             
             if (signUpButton) signUpButton.style.display = "none";
+            if (profileContainer) profileContainer.style.display = "block";
+            
             if (profilePic) {
-                profilePic.style.display = "block";
                 profilePic.src = user.photoURL || '../static/images/user.png';
                 profilePic.addEventListener('click', toggleDropdown);
             }
@@ -229,6 +432,9 @@ onAuthStateChanged(auth, async (user) => {
                     handleLogout();
                 });
             }
+
+            // Update user stats (credits and invites)
+            await updateUserStats(user.uid);
 
             // Update UI for authenticated state
             document.querySelectorAll('.auth-required').forEach(elem => {
@@ -245,7 +451,7 @@ onAuthStateChanged(auth, async (user) => {
     } else {
         // User is signed out
         if (signUpButton) signUpButton.style.display = "block";
-        if (profilePic) profilePic.style.display = "none";
+        if (profileContainer) profileContainer.style.display = "none";
         
         // Update UI for non-authenticated state
         document.querySelectorAll('.auth-required').forEach(elem => {
@@ -255,16 +461,13 @@ onAuthStateChanged(auth, async (user) => {
             elem.style.display = 'block';
         });
 
-        // Redirect to login if on protected page
-        const protectedPaths = ['/', '/index.html'];
-        if (protectedPaths.includes(window.location.pathname)) {
-            window.location.href = '/login';
-        }
+       
     }
 });
 
 // Dropdown toggle function
-function toggleDropdown() {
+function toggleDropdown(event) {
+    event.stopPropagation();
     const dropdown = document.getElementById('profile-dropdown');
     if (dropdown) {
         dropdown.classList.toggle('show');
