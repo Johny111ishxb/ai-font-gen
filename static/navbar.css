@@ -5,14 +5,26 @@
   top: 0;
   width: 100%;
   padding: 1rem 0;
-  z-index: 9999;
+  z-index: 1000;
   transition: background-color 0.3s;
   background: var(--nav-bg);
   box-shadow: 0px 25px 25px var(--nav-shadow);
   backdrop-filter: var(--backdrop-filter);
   border-bottom: 1pt solid var(--ink-dark);
 }
-
+.beta-tag {
+  position: absolute;
+  top: -8px;
+  right: -30px;
+  font-size: 0.6rem;
+  background: var(--accent-warm);
+  color: white;
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-weight: bold;
+  transform: rotate(15deg);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
 .nav-content {
   display: flex;
   justify-content: space-between;
@@ -91,7 +103,7 @@
 
 .credits-label {
   font-size: 0.9rem;
-  color: var(--ink-dark);
+  color: #666;
 }
 
 .credits-value {
@@ -157,11 +169,14 @@
   margin-bottom: 1rem;
   padding-bottom: 0.75rem;
   border-bottom: 1px solid #eee;
+
 }
 
 .user-name {
   font-weight: bold;
   margin-bottom: 0.25rem;
+  color: var(--ink-dark);
+
 }
 
 .user-email {
@@ -175,6 +190,7 @@
   margin-bottom: 1rem;
   padding-bottom: 0.75rem;
   border-bottom: 1px solid #eee;
+
 }
 
 .stats-item {
@@ -191,6 +207,8 @@
 .stats-value {
   font-weight: bold;
   font-size: 1.1rem;
+  color: var(--ink-dark);
+
 }
 
 .dropdown-menu {
