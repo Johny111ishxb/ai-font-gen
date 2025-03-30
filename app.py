@@ -116,7 +116,7 @@ def logout():
 
 @app.route('/get_sample_form')
 def get_sample_form():
-    return send_from_directory('static', 'sample_form.pdf')
+    return send_from_directory('static', 'handwrite_sample.pdf')
 
 @app.route('/upload', methods=['POST'])
 def upload():
