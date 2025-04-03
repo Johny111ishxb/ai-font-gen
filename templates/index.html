@@ -120,10 +120,9 @@
                 </p>
             </div>
 
-            <div id="error-message" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+            <div id="error-message" role="alert">
                 <span class="block sm:inline"></span>
             </div>
-
             <div id="card1" class="bg-white rounded-lg shadow-lg p-8 mb-8">
                 <h2 class="text-2xl font-bold -900 mb-4">Steps to Create Your Font</h2>
                 <div class="space-y-4 ">
@@ -288,81 +287,55 @@
           </span>
         </button>
       </div>
-    <script type="module">
+      <script type="module">
+        
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
         import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
-
+    
         const firebaseConfig = {
-    apiKey: "AIzaSyBk24eVfBQoPQ8Adiw9mA2sS_tpzwJ-ksk",
-    authDomain: "imagetotext-4c3e3.firebaseapp.com",
-    projectId: "imagetotext-4c3e3",
-    storageBucket: "imagetotext-4c3e3.appspot.com",
-    messagingSenderId: "643977043225",
-    appId: "1:643977043225:web:9d648f58d7098a0c78f988",
-    measurementId: "G-XRQFS9KGR0"
-};
-
+            apiKey: "AIzaSyA8D2w0J8auihu3BbR8McIpoSduDfI2jxo",
+            authDomain: "are-you-genius-1f253.firebaseapp.com",
+            projectId: "are-you-genius-1f253",
+            storageBucket: "are-you-genius-1f253.firebasestorage.app",
+            messagingSenderId: "771421054895",
+            appId: "1:771421054895:web:7a27a9c69f722069ebb15a",
+            measurementId: "G-RE3R9WGMH9"
+        };
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         let fontGenerationCount = 0;
-
+    
         // Auth state observer
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                document.getElementById('unauthSection').classList.add('hidden');
-                document.getElementById('authSection').classList.remove('hidden');
-                document.getElementById('profile-name').textContent = user.displayName || 'User';
-                document.getElementById('profile-email').textContent = user.email;
-                if (user.photoURL) {
-                    document.getElementById('profile-pic').src = user.photoURL;
-                }
+       // Auth state observer
+onAuthStateChanged(auth, async (user) => {
+    if (user) {
+        document.getElementById('unauthSection').classList.add('hidden');
+        document.getElementById('authSection').classList.remove('hidden');
+        document.getElementById('profile-name').textContent = user.displayName || 'User';
+        document.getElementById('profile-email').textContent = user.email;
+        if (user.photoURL) {
+            document.getElementById('profile-pic').src = user.photoURL;
+        }
 
-                // Verify token with backend
-                const token = await user.getIdToken();
-                const response = await fetch('/verify-token', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ token })
-                });
-
-                if (!response.ok) {
-                    await auth.signOut();
-                }
-            } else {
-                document.getElementById('unauthSection').classList.remove('hidden');
-                document.getElementById('authSection').classList.add('hidden');
-            }
+        // Verify token with backend
+        const token = await user.getIdToken();
+        const response = await fetch('/verify-token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ token })
         });
 
-        // Profile dropdown
-        const profilePic = document.getElementById('profile-pic');
-        const dropdown = document.getElementById('profile-dropdown');
-
-        profilePic.addEventListener('click', (e) => {
-            e.stopPropagation();
-            dropdown.classList.toggle('show');
-        });
-
-        window.addEventListener('click', () => {
-            dropdown.classList.remove('show');
-        });
-
-        // Logout handler
-        document.getElementById('logoutBtn').addEventListener('click', async () => {
-            try {
-                await auth.signOut();
-                await fetch('/logout', {
-                    method: 'POST',
-                    credentials: 'include'
-                });
-                window.location.href = '/login';
-            } catch (error) {
-                showError('Logout failed. Please try again.');
-            }
-        });
-
+        if (!response.ok) {
+            await auth.signOut();
+        }
+    } else {
+        document.getElementById('unauthSection').classList.remove('hidden');
+        document.getElementById('authSection').classList.add('hidden');
+    }
+});
+        
         // File handling functions
         const dropzone = document.getElementById('dropzone');
         const fileInput = document.getElementById('fileInput');
@@ -373,53 +346,55 @@
         const downloadSection = document.getElementById('downloadSection');
         const downloadBtn = document.getElementById('downloadBtn');
         const errorMessage = document.getElementById('error-message');
-
+    
         function showError(message) {
-            errorMessage.querySelector('span').textContent = message;
-            errorMessage.classList.remove('hidden');
-            setTimeout(() => {
-                errorMessage.classList.add('hidden');
-            }, 5000);
-        }
-
+    const errorElement = errorMessage.querySelector('span');
+    errorElement.textContent = message;
+    errorMessage.classList.add('show');
+    
+    setTimeout(() => {
+        errorMessage.classList.remove('show');
+    }, 5000);
+}
+    
         // Drag and drop handlers
         ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
             dropzone.addEventListener(eventName, preventDefaults, false);
         });
-
+    
         function preventDefaults(e) {
             e.preventDefault();
             e.stopPropagation();
         }
-
+    
         ['dragenter', 'dragover'].forEach(eventName => {
             dropzone.addEventListener(eventName, () => {
                 dropzone.classList.add('dragover');
             }, false);
         });
-
+    
         ['dragleave', 'drop'].forEach(eventName => {
             dropzone.addEventListener(eventName, () => {
                 dropzone.classList.remove('dragover');
             }, false);
         });
-
+    
         dropzone.addEventListener('drop', handleDrop, false);
-
+    
         function handleDrop(e) {
             const dt = e.dataTransfer;
             const files = dt.files;
             handleFiles(files);
         }
-
+    
         dropzone.addEventListener('click', () => {
             fileInput.click();
         });
-
+    
         fileInput.addEventListener('change', (e) => {
             handleFiles(e.target.files);
         });
-
+    
         function handleFiles(files) {
             if (files.length > 0) {
                 const file = files[0];
@@ -430,7 +405,7 @@
                 }
             }
         }
-
+    
         function showPreview(file) {
             const reader = new FileReader();
             reader.onload = (e) => {
@@ -439,53 +414,65 @@
             };
             reader.readAsDataURL(file);
         }
+    
+        // Generate button handler - REPLACE THIS SECTION
+generateBtn.addEventListener('click', async () => {
+    const user = auth.currentUser;
+    
+    const formData = new FormData();
+    formData.append('handwriting', fileInput.files[0]);
 
-        // Generate button handler
-        generateBtn.addEventListener('click', async () => {
-            const user = auth.currentUser;
+    generateBtn.classList.add('hidden');
+    status.classList.remove('hidden');
+    errorMessage.classList.add('hidden');
+    downloadSection.classList.add('hidden');
+
+    try {
+        const idToken = user ? await user.getIdToken() : null;
+        const response = await fetch('/upload', {
+            method: 'POST',
+            headers: idToken ? {
+                'Authorization': `Bearer ${idToken}`
+            } : {},
+            body: formData
+        });
+
+        // First check if the response is ok (status 200-299)
+        if (!response.ok) {
+            // Try to parse the error response
+            const errorData = await response.json().catch(() => ({}));
             
-            if (fontGenerationCount > 0 && !user) {
-                showError('Please sign up to generate more fonts');
-                window.location.href = '/signup';
+            // Special handling for 401 errors
+            if (response.status === 401) {
+                showError(errorData.error || 'Please sign up to generate more fonts');
                 return;
             }
+            
+            // For other errors
+            throw new Error(errorData.error || `Server error: ${response.status}`);
+        }
 
-            const formData = new FormData();
-            formData.append('handwriting', fileInput.files[0]);
+        // If response is ok, parse the success data
+        const data = await response.json();
+        
+        if (data.success) {
+            status.classList.add('hidden');
+            downloadSection.classList.remove('hidden');
+            downloadBtn.href = data.font_url;
+            downloadBtn.download = data.filename;
+        } else {
+            throw new Error(data.error || 'Failed to generate font');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showError(error.message);
+        generateBtn.classList.remove('hidden');
+    } finally {
+        status.classList.add('hidden');
+    }
+});
 
-            generateBtn.classList.add('hidden');
-            status.classList.remove('hidden');
-            errorMessage.classList.add('hidden');
-            downloadSection.classList.add('hidden');
 
-            try {
-                const idToken = user ? await user.getIdToken() : null;
-                const response = await fetch('/upload', {
-                    method: 'POST',
-                    headers: idToken ? {
-                        'Authorization': `Bearer ${idToken}`
-                    } : {},
-                    body: formData
-                });
-
-                const data = await response.json();
-                
-                if (data.success) {
-                    fontGenerationCount++;
-                    status.classList.add('hidden');
-                    downloadSection.classList.remove('hidden');
-                    downloadBtn.href = data.font_url;
-                    downloadBtn.download = data.filename;
-                } else {
-                    throw new Error(data.error || 'Failed to generate font');
-                }
-            } catch (error) {
-                showError(error.message);
-                generateBtn.classList.remove('hidden');
-            } finally {
-                status.classList.add('hidden');
-            }
-        });
         const themeToggle = document.getElementById('btn');
         
         // Function to set theme
@@ -501,13 +488,13 @@
             }
             localStorage.setItem('theme', theme);
         }
-
+    
         // Check for saved theme preference
         const savedTheme = localStorage.getItem('theme');
-
+    
         // Check for system theme preference
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
-
+    
         // Set initial theme
         if (savedTheme) {
             setTheme(savedTheme);
@@ -515,21 +502,22 @@
             // If no saved preference, use system preference
             setTheme(prefersDark.matches ? 'dark-mode' : 'light-mode');
         }
-
+    
         // Listen for theme toggle changes
         themeToggle.addEventListener('change', function(e) {
             setTheme(e.target.checked ? 'dark-mode' : 'light-mode');
         });
-
+    
         // Listen for system theme changes
         prefersDark.addListener((e) => {
             if (!localStorage.getItem('theme')) {
                 setTheme(e.matches ? 'dark-mode' : 'light-mode');
             }
         });
-
+        
     </script>
-         <script async src="../static/script.js"></script>
+      
+       <script  src="../static/script.js"></script>
 
 </body>
 </html>
