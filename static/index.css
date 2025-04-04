@@ -290,5 +290,39 @@ p {
 }
 
 .head{
-    background-color: var(--accent-warm);
+    background-color: var(--accent-warm);}
+/* Error message styles */
+#error-message {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    width: 80%;
+    max-width: 500px;
+    padding: 15px;
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+    border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    text-align: center;
+    display: none; /* Start hidden, will be shown via JS */
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+#error-message.show {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translate(-50%, -20px); }
+    to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* Dark mode support */
+[data-theme="dark"] #error-message {
+    background-color: #422b2d;
+    color: #f8d7da;
+    border-color: #5c2a31;
 }
