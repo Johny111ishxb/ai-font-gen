@@ -45,10 +45,11 @@
 /* Footer */
 footer {
   background: var(--paper-white);
-  padding: 5rem 2rem 3rem;
+  padding: 6rem 2.5rem 4rem; /* More generous padding for a fresh, open feel */
   color: var(--ink-medium);
-  border-top: 1px solid var(--paper-border);
+  border-top: 1px solid rgba(var(--paper-border), 0.5);
   position: relative;
+  transition: background 0.3s ease; /* Smooth theme transitions */
 }
 
 footer::before {
@@ -57,16 +58,18 @@ footer::before {
   top: 0;
   left: 0;
   right: 0;
-  height: 4px;
-  background: linear-gradient(to right, 
-    var(--accent-primary), 
-    var(--accent-secondary),
-    var(--accent-primary));
-  opacity: 0.8;
+  height: 6px; /* Thicker for bolder impact */
+  background: linear-gradient(
+    to right,
+    var(--accent-warm),
+    rgba(var(--accent-warm), 0.7) 50%,
+    var(--accent-primary)
+  ); /* Vibrant gradient for freshness */
+  opacity: 0.9;
+  transition: opacity 0.3s ease;
 }
-
 .footer-container {
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
 }
 
@@ -84,11 +87,13 @@ footer::before {
 
 .footer-logo {
   font-family: var(--font-display);
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin-bottom: 1.5rem;
+  font-size: 1.75rem; /* Larger for bold presence */
+  font-weight: 800; /* Bolder for freshness */
+  margin-bottom: 1.75rem;
   color: var(--ink-dark);
+  position: relative;
   display: inline-block;
+  transition: color 0.3s ease;
 }
 
 .footer-description {
@@ -150,22 +155,21 @@ footer::before {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 40px; /* Larger for modern touch */
+  height: 40px;
   border-radius: 50%;
-  border: 1px solid var(--ink-dark);
-  background: transparent;
+  border: 1px solid rgba(var(--ink-dark), 0.7);
+  background: linear-gradient(135deg, rgba(var(--accent-warm), 0.1), transparent); /* Subtle gradient */
   color: var(--accent-warm);
-  transition: all var(--transition-normal);
+  transition: all 0.3s ease;
 }
 
 .social-icon:hover {
-  background: var(--accent-primary);
+  background: var(--accent-warm);
   color: white;
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-md);
+  transform: translateY(-4px) scale(1.05); /* More dynamic lift */
+  box-shadow: 0 4px 12px rgba(var(--accent-warm), 0.3);
 }
-
 /* Newsletter */
 .newsletter-form {
   display: flex;
